@@ -20,6 +20,7 @@
 | [团队任务边界](TEAM_TASKS.md) | 按核心依赖分工、接口和代码范围 |
 | [会议后的正式分工草案](team/README.md) | 程佳锐/xlz/马泽瑜的8项可建立 Issue 的工单 |
 | [AI 开工与提交 PR 规则](team/WORKFLOW.md) | 给队员/Agent 的提示词、执行边界和验收流程 |
+| [前端源码留存与版本同步](team/FRONTEND_SOURCE_AND_VERSION_SYNC.md) | 防止只留服务器构建产物，统一 main、任务分支、SHA、前后端契约与发布记录 |
 | [参考资料交接](team/REFERENCES.md) | 每个人需要的代码、Skill、Hark 资料与缺失项 |
 | [卡片开发契约](CARD_DEVELOPMENT.md) | 模型数据、Schema、事实来源、renderer、编辑与保存规则 |
 | [单卡设计表](cards/CARD_SPEC_TEMPLATE.md) | 每张卡的参数、编辑权限、视觉、主题与验收模板 |
