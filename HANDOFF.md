@@ -1,6 +1,6 @@
 # VIVIC 团队交接说明
 
-> 状态：交接收尾中。仓库 `Bruce-Yii/vivic-team`（Private），协作主线 `main`。
+> 状态：源码快照、交接文档与基础运行验证已完成；GitHub Actions 远端 CI 因账号额度耗尽暂不可验证。仓库 `Bruce-Yii/vivic-team`（Private），协作主线 `main`。
 
 ## 1. 基线来源
 
@@ -33,7 +33,10 @@
 | 项 | 结果 |
 | --- | --- |
 | `pnpm install --frozen-lockfile` | ✅ 791 包 |
-| `pnpm --filter @vivic/web exec vite build` | ✅ 可打包 |
+| `pnpm --filter @vivic/web exec vite build` | ✅ 可打包（Web） |
+| `pnpm typecheck` | ✅ 0 errors |
+| `pnpm build` | ✅ Web + Mobile 构建通过 |
+| `pnpm test` | ⚠️ 仍有既有失败用例，未作为本次建仓 Gate |
 | `pnpm --filter @vivic/local-api typecheck` | ✅ 0 错误 |
 | 后端启动 + `/healthz` | ✅ `{"ok":true,"service":"vivic-local-api"}` |
 | ASR Gateway 启动 | ✅ `ws://127.0.0.1:8799/asr` |
@@ -44,9 +47,9 @@
 ## 5. 已知问题（如实标注，不伪造）
 
 1. **GitHub Actions 无法执行**：账号私有仓库 Actions 额度耗尽，job 在分配 runner 前即失败（`runner=""`、`steps=0`、3–7 秒）。最后一次成功 run 为 2026-11-15 09:17 UTC。这与代码质量无关，恢复额度或改用自托管 runner 后才能取得 CI 证据。
-2. **`pnpm build` 被陈旧测试阻断**：`tsc -b` 阶段有 2 个测试文件与当前组件 API 不匹配（`SettingsExperience.test.tsx` 的 `local` prop、`SpaceEditing.test.tsx` 的 `CanvasManager`/`onBeforeClear`）。产品本体 `vite build` 正常。
+2. **历史测试债已与构建阻断区分**：两个陈旧测试文件已按当前组件 API 修正，干净环境 `pnpm typecheck` 与 `pnpm build` 均通过。
 3. **`pnpm test` 有失败用例**：web / local-api / mobile-console 各一批，均为原仓库既有。
-4. **全双工未通过产品验收**：ASR 为 Mock、意图为规则、TaskProjection 未接真实 HostedTask；P3（YU-405）保持未通过。
+4. **全双工未通过产品验收**：ASR 为 Mock、意图为规则、TaskProjection 未接真实 HostedTask；P3（YU-405）保持未通过。此项是产品能力验收状态，不影响本次代码仓库快照与基础启动交接。
 5. **Web 源码无法 100% 重建服务器 release**：服务器元数据标记 `sourceBuildReproducible: false`，缺 card-packages authoring generator。
 
 ## 6. 服务器 Web release 产物
