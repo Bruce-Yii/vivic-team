@@ -1,7 +1,7 @@
 # 从这里开始（VIVIC 团队协作仓库）
 
-> 本仓库是 VIVIC 的团队协作基线：**服务器后端部署基线对应的源码 + 当前可取得的 Web 可编辑源码 + MOSS-Live 方向的全双工阶段成果**。服务器 2026-11-08 Web release 的部分内容只有构建产物，没有完整可编辑源码，不属于本仓库可重建范围。
-> 仓库：`Bruce-Yii/vivic-team`（Public）。原仓库 `Bruce-Yii/vivic` 保持不动，仅作历史与研发溯源。
+> 本仓库是 VIVIC 的**原始基准仓库**：保存服务器后端部署基线对应的源码、当前可取得的 Web 可编辑源码，以及 MOSS-Live 方向的全双工阶段成果。服务器 2026-11-08 Web release 的部分内容只有构建产物，没有完整可编辑源码，不属于本仓库可重建范围。
+> 原始仓库：`Bruce-Yii/vivic-team`（Public）。后续实际协作前，由协作者将本仓库复刻到自己账号下；**复刻后的协作者仓库才是唯一开发、任务、PR 和集成工作区**。本仓库默认只作来源参考，不作为后续协作目标。
 
 ## 1. 这个仓库包含什么
 
@@ -54,21 +54,25 @@ pnpm --filter @vivic/web test turnTaking         # 定向单测
 **已知未通过**
 - P3 全双工产品行为闭环（YU-405）未通过独立验收：连续多轮 ASR、真实插话意图、HostedTask 真实回执均未验证。
 
-**已知既有失败（原仓库同样存在，不是本仓库引入）**
-- 本次干净环境验证中，`pnpm typecheck` 通过（0 errors），`pnpm build` 的 Web + Mobile 构建通过。此前阻断构建的两个陈旧测试已按当前组件 API 修正；这不代表全量 `pnpm test` 已通过。
-- `pnpm test` 仍存在失败用例（web / local-api / mobile-console 各一批），属于本次交接前已存在的测试债；本轮未以修复全部产品测试为建仓前提。
-- GitHub Actions 已可正常执行（仓库为 public）。CI 中 install / `contracts:check` / `typecheck` / `lint` 在 ubuntu 与 windows 双平台通过；`Unit tests` 与 `Browser smoke` 因下述存量测试债失败，因此 CI 整体为红——这不是构建失败。
+**构建与测试现状**
+- 仓库存在既有的历史测试失败与构建注意事项，属遗留状态，不是本轮协作文档引入的问题。
+- 具体结果以仓库当前实际命令输出与 CI 页面为准；文档不承诺测试全绿，也不把他人单次运行结果当作本轮基线证据。
 
 ## 4. 阅读顺序
 
-1. 本文件 → 2. `HANDOFF.md`（交接范围与验收状态）→ 3. `AGENTS.md`（协作与边界规则）
-2. 架构约束：`docs/moss-live-full-duplex-architecture-constraints.md`（MOSS-Live 对齐的职责划分）
-3. 设计与决策记录：`docs/decisions/`、`docs/design/`
-4. 历史验证：`docs/verification/`
+1. 本文件
+2. `docs/team/FRONTEND_SOURCE_AND_VERSION_SYNC.md`（协作仓库、前端源码留存、Git SHA 与前后端契约）
+3. `AGENTS.md`（产品架构与协作边界）
+4. `docs/AGENT_HANDOFF.md`（历史交接与验收边界）
+5. `docs/moss-live-full-duplex-architecture-constraints.md`（MOSS-Live 对齐的职责划分）
+6. `docs/decisions/`、`docs/design/`（设计与决策记录）
+7. `docs/verification/`（历史验证）
 
 ## 5. 协作约定
 
-- 分支：从 `main` 切任务分支，PR 回 `main`；一个任务一个 PR。
+- 本仓库是原始来源，不是后续实际协作工作区。后续所有 Issue、任务分支、commit、PR 和集成都在协作者复刻后的仓库中完成。
+- 所有参与者 clone 同一个协作者仓库；`origin` 指向该仓库。PR 的 base 必须是该仓库自己的默认分支，不得默认指向 `Bruce-Yii/vivic-team`。
+- 前端源码与服务器发布版本按 [源码留存与版本同步规范](docs/team/FRONTEND_SOURCE_AND_VERSION_SYNC.md) 执行；不以服务器 bundle 代替源码。
 - 不把 Mock/规则实现写成真实供应商能力；新增能力必须有可复现测试。
 - 不提交凭据、生产数据库或线上配置；`.env*` 默认不入库。
-- 线上部署、生产配置变更需要单独明确授权；本仓库不承担部署职责。
+- 线上部署、生产配置变更需要单独明确授权；本规范不授权部署。

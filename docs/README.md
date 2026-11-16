@@ -1,9 +1,10 @@
 ﻿# 文档目录
 
 > **当前入口**：[交接说明](../HANDOFF.md)（基线、范围、验证结果、已知问题）与 [根入口](../README_FIRST.md)（快速开始与能力边界）。
+> 协作规则：[前端源码留存与版本同步](team/FRONTEND_SOURCE_AND_VERSION_SYNC.md)、[Git 约定](GIT_WORKFLOW.md)、[贡献指南](../CONTRIBUTING.md)。
 > 服务器基线、部署与验收资料见 `operations/`、`deployment/`、[../tooling/](../tooling/)。
 
-当前入口集中在下表。历史报告与归档源码不属于本仓库范围（`archive/`、`outputs/`、`work/` 等目录未纳入交接快照）。
+当前入口集中在下表。历史报告与归档源码不属于本仓库范围（`archive/`、`outputs/`、`work/` 等目录未纳入本仓库）。
 
 ## 开发必读
 
@@ -15,8 +16,9 @@
 | [交接说明](../HANDOFF.md) | 源码基线、纳入/排除范围、验证结果与已知问题 |
 | [Git 约定](GIT_WORKFLOW.md) | 主仓库、fork、PR 与合入 |
 | [团队任务边界](TEAM_TASKS.md) | 按核心依赖分工、接口和代码范围 |
-| [会议后的正式分工草案](team/README.md) | 程佳锐/xlz/马泽瑜的8项可建立 Issue 的工单 |
-| [AI 开工与提交 PR 规则](team/WORKFLOW.md) | 给队员/Agent 的提示词、执行边界和验收流程 |
+| [历史团队分工快照](team/README.md) | 2026-10-20 的旧人员分工与工单，仅供溯源，不代表当前协作安排 |
+| [Agent 协作流程](team/WORKFLOW.md) | 与具体仓库账号无关的通用开工、分支、提交与交接规则 |
+| [前端源码留存与版本同步](team/FRONTEND_SOURCE_AND_VERSION_SYNC.md) | 明确原始仓库与协作者复刻仓库的边界，统一源码留存、Git SHA、分支、前后端契约与发布记录 |
 | [参考资料交接](team/REFERENCES.md) | 每个人需要的代码、Skill、Hark 资料与缺失项 |
 | [卡片开发契约](CARD_DEVELOPMENT.md) | 模型数据、Schema、事实来源、renderer、编辑与保存规则 |
 | [单卡设计表](cards/CARD_SPEC_TEMPLATE.md) | 每张卡的参数、编辑权限、视觉、主题与验收模板 |

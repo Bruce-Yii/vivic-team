@@ -1,5 +1,7 @@
 # Vivic 三人开发：2026-10-20 执行入口
 
+> **历史资料提示：** 本页记录的是 2026-10-20 的旧团队分工、人员账号和旧任务计划，不是当前协作安排。后续协作者必须先复刻原始仓库，并在复刻后的仓库中协作；不得照搬本页旧账号、旧仓库地址、Issue 或 PR 目标。当前协作规则以 [源码留存与版本同步规范](FRONTEND_SOURCE_AND_VERSION_SYNC.md) 和 [通用 Agent 协作流程](WORKFLOW.md) 为准。
+
 已核对 10/19 的 PDF/Excel 和两场飞书原始文字记录。用户已确认 GitHub 账号：xlz 为 `franzkotkowski330-collab`，马泽瑜为 `Shenbeijc`，程佳锐为 `ECdison6227`。工单正文已可交接，线上 Issue/Project/assignee 尚未创建。数据索引：[iteration-20261020.json](iteration-20261020.json)。
 
 材料和交付验证见 [核对记录](../verification/team-assignment-20261020.md)。
@@ -31,12 +33,12 @@ P0/P1 是本轮建议优先级，非会议承诺时长。xlz 23–24 日集中�
 
 ## 如何放进 GitHub
 
-1. 先将当前文档/Skill 分支经 PR 合入 main，记录新的基线 SHA。不要让其他人找不到工单引用的文件。
+1. 先将当前文档/Skill 分支经 PR 合入协作者仓库的默认分支，记录新的基线 SHA。不要让其他人找不到工单引用的文件。
 2. 建一个 Projects 看板（建议名 `Vivic · 本地版与旅游演示`），状态按 [WORKFLOW](WORKFLOW.md)；若暂不建看板，Issues 列表也能开工。
 3. 将 `docs/tasks/20261020/` 每个文件的正文建成一个 Issue，标题保留任务代号。分阶段先发 PLAT-01、TRAVEL-01、DEC-01，后续任务可留 Backlog。
 4. 填实际负责人/assignee、基线 SHA、依赖 Issue 链接和必要参考；若成员不可选为 assignee，正文注明负责人，不为此直接授予写权限。
-5. 队员从最新主仓库 main 建自己的分支，按个人任务说明和 [AI 开工提示词](WORKFLOW.md) 开发。
-6. 验收本机成果后，把 [提交 PR 提示词](WORKFLOW.md) 发给 Agent；检查当前 head 的 CI 和真实行为，再由程佳锐 Squash 合入。
+5. 队员从协作者仓库最新默认分支建自己的分支，按个人任务说明和 [AI 开工提示词](WORKFLOW.md) 开发。
+6. 验收本机成果后，把 [提交 PR 提示词](WORKFLOW.md) 发给 Agent；检查当前 head 的 CI 和真实行为，再由任务负责人按协作者仓库规则合入。
 
 **没有自动创建 Issue、发消息或邀请。** 用户明确说“做好分工我给他们”，所以本轮交付可转发文件与工单正文；GitHub 上是否已发布必须以实际链接为准，不能把本页代号当 Issue 编号。
 

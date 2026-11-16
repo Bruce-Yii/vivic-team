@@ -24,14 +24,17 @@
 
 先读 [README_FIRST.md](README_FIRST.md) 和 [当前交接](docs/AGENT_HANDOFF.md)，再按任务读取模块。本文件是当前产品与协作约定；旧阶段报告和归档指令只供追溯，不用于重复开发。
 
+- 本轮实际开发仓库是协作者复刻后的仓库，不是原始仓库 `Bruce-Yii/vivic-team`。所有 Issue、分支、PR 和集成都在协作者仓库中完成；不得默认向原始仓库提 PR。
+- 前端源码留存、服务器构建产物、Git SHA 同步及前后端发布顺序，必须遵循 [前端源码留存与协作仓库版本同步规范](docs/team/FRONTEND_SOURCE_AND_VERSION_SYNC.md)。`apps/web` 是可编辑源码真值；不得直接把服务器 bundle 当源码修改。后端任务未明确涉及前端时，不重打前端包。
+
 2026-10-23 用户最新优先级：先开发 Vivic 线上端，本地启动器/模型后续再做。全在线用户直接用网页，自有 API 也不强制下载安装。线上版采用隔离会话后端和三步新手引导，严格复用 library Hark；本轮只做可部署版本与本机验证，不发布到服务器。早期“先本地单人版”的排期由此更新，既有本地成果保留。后续设置已改为聊天上的小面板，仅连接/偏好/数据三组；卡片、提醒和空间操作移至聊天顶部 Space，详细配置折叠。保持编辑器、草稿和 owner 挂载，原生 dialog 内的 Radix 弹层使用 ControlOverlayContext，见 `docs/updates/2026-10-23-settings-panel.md`。
 
 2026-10-19 最新安排：三人协作完善本地单人版，再讨论部署、多账号和收费。维护者重点优化核心流程，也可开发新功能；偏前端、偏后端的伙伴可承担 Landing、新卡片和新功能，按与核心的依赖程度分配。当前路线见 [本地开发路线](docs/LOCAL_ROADMAP.md)，分工边界见 [团队任务单](docs/TEAM_TASKS.md)，协作入口见 [贡献指南](CONTRIBUTING.md)。
 
 - 伙伴/贡献者 Agent 按已分配任务的文件清单、接口契约和验收标准工作；允许实现任务内的新功能、卡片、Landing 和相应测试，不因角色被限制为只写报告。
-- 核心请求链路、认证、共享契约、owner/同步/持久化及依赖/CI 的跨模块修改由维护者统筹，任务确实需要时先明确接口与集成范围。超出任务的修复另记，不能顺手扩展；不得删除必要测试、降低断言或跳过检查来掩盖失败。
-- 伙伴默认从 fork 提 PR，维护者核对范围并决定合入；不因伙伴未交付而阻断主线。CODEOWNERS 与文档不等于线上写权限/分支规则已生效。
-- 2026-10-20 已按会议核对分工：程佳锐做核心/卡片接入和集成，xlz 做旅游卡片/MCP 独立试跑及 UI 原型，马泽瑜做决策模型和本地启动器。以 [当前工单](docs/team/README.md) 为准，不按旧“前端/后端”猜测让马泽瑜改飞猪适配。AI 开发与提交 PR 的执行边界见 [WORKFLOW](docs/team/WORKFLOW.md)。
+- 核心请求链路、认证、共享契约、owner/同步/持久化及依赖的跨模块修改由维护者统筹，任务确实需要时先明确接口与集成范围。超出任务的修复另记，不能顺手扩展；不得删除必要测试、降低断言或跳过检查来掩盖失败。
+- 所有后续 Issue、分支、commit、PR 和集成都发生在协作者复刻后的仓库；原始仓库 `Bruce-Yii/vivic-team` 只作为来源参考。具体 remote、默认分支与 PR 目标按 [协作仓库版本同步规范](docs/team/FRONTEND_SOURCE_AND_VERSION_SYNC.md) 执行。
+- 2026-10-20 的三人分工与旧工单是历史快照，不代表本轮协作者、当前负责人或当前任务。需要参考时只用于了解旧项目背景；不得照搬旧账号、旧仓库地址或旧 PR 目标。通用执行边界见 [WORKFLOW](docs/team/WORKFLOW.md)。
 - 新卡片任务先按 [卡片开发契约](docs/CARD_DEVELOPMENT.md) 固定模型数据、Schema、事实来源、渲染与编辑接口；配套 [开发 Skill](.agents/skills/vivic-card-development/SKILL.md)。首个系列为 [飞猪旅游系列卡片](docs/tasks/fliggy-travel-cards.md)。不把开发 Skill 当运行时插件，不因外部 MCP 数据接入而跳过校验。
 
 - 这是 Web 信息画布，Control/Display 双视图；Display 保持极简。2026-10-16 用户反馈更新：纯计时器只有数字；带事项的提醒显示事项与时间，未固定提醒合并呈现，到时后退出画布、记录留在 Control。2026-10-17 起 Control 分为用户页 `/` 与设置页 `/control`，二者是同一个 owner 窗口；2026-10-22 用户要求两个标签页间有可见传送门，以及聚焦、显示全部等界面操作，用户页顶部和展示页底部提供这些入口，见 [用户页](docs/user-page-20261017.md)。
@@ -44,6 +47,6 @@
 - 当前自动化测试静音，TTS 保持关闭，不采集物理麦克风；实际播放需用户后续明确允许。浏览器测试使用独立 context，不碰用户真实画布。
 - 自动排版须避开固定卡片；关注长文本、内容增长、撤销和旧画布恢复。两张均固定时不能擅自移动坐标。
 - 在当前开发分支继续，小步提交；不要重置/覆盖已有工作。未收到用户“提交 PR”等明确指令时，不自动推送、合并或发布。基线/分支约定见 [Git 工作方式](docs/GIT_WORKFLOW.md)。
-- 当前协作仓库为 `Bruce-Yii/vivic-team`（Public），协作主线为 `main`；原仓库 `Bruce-Yii/vivic` 与更早的 `ECdison6227/vivic-canvas` 只作历史与研发溯源，不再作为合入目标。用户说“提交 PR”即授权提交本轮改动、推送任务分支并创建 base 为 `vivic-team:main` 的 PR，无需重复确认。操作前核对实际 remote；标题和说明必须对应本轮实际修改并写明验证结果。只创建，不合并、不启用自动合并。每轮修改使用对应 PR，必要时新建分支，避免混入此前 PR 的改动。
+- 当前仓库 `Bruce-Yii/vivic-team` 是原始基准仓库，不是后续实际协作工作区；仓库当前为 Public。后续由协作者复刻后的仓库作为唯一工作区，具体 owner/name 与默认分支开工前登记。不得默认在本仓库创建开发分支、Issue 或 PR，也不得把 PR 指向本仓库的 `main`。所有参与者核对 `origin` 指向协作者仓库后再开发；详细规则见 `docs/team/FRONTEND_SOURCE_AND_VERSION_SYNC.md`。原始仓库此前关于 Private、旧 PR 目标和旧团队 remote 的记录均已过期。
 
 按改动运行相应检查；前端 `pnpm --filter @vivic/web test`，后端 `pnpm --filter @vivic/local-api test`，全量 `pnpm test`，类型 `pnpm typecheck`，构建 `pnpm build`。浏览器测试使用 5174/8788，串行运行不同 Playwright 命令，避免占用用户的 5173/8787。

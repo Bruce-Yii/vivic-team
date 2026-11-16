@@ -1,6 +1,6 @@
 # VIVIC 团队交接说明
 
-> 状态：源码快照、交接文档与基础运行验证已完成。仓库 `Bruce-Yii/vivic-team`（Public），协作主线 `main`。GitHub Actions 已可执行：install / contracts / typecheck / lint 双平台通过，Unit tests 与 Browser smoke 因存量测试债失败。
+> 状态：源码快照、交接文档与基础运行验证已完成。`Bruce-Yii/vivic-team` 是**原始基准仓库（Public）**，只作来源参考；后续实际协作发生在协作者复刻后的仓库（见 `docs/team/FRONTEND_SOURCE_AND_VERSION_SYNC.md`）。
 
 ## 1. 基线来源
 
@@ -36,19 +36,18 @@
 | `pnpm --filter @vivic/web exec vite build` | ✅ 可打包（Web） |
 | `pnpm typecheck` | ✅ 0 errors |
 | `pnpm build` | ✅ Web + Mobile 构建通过 |
-| `pnpm test` | ⚠️ 仍有既有失败用例，未作为本次建仓 Gate |
+| `pnpm test` | ⚠️ 存在既有历史失败用例；以实际输出为准 |
 | `pnpm --filter @vivic/local-api typecheck` | ✅ 0 错误 |
 | 后端启动 + `/healthz` | ✅ `{"ok":true,"service":"vivic-local-api"}` |
 | ASR Gateway 启动 | ✅ `ws://127.0.0.1:8799/asr` |
 | 单元测试（定向） | ✅ web 11 / local-api 13 passed |
 | E2E `fullDuplex.spec.ts` | ✅ 1 passed（fake media + WS mock） |
-| `pnpm contracts:check` | ✅（修复分支内，`fix/handoff-gates`） |
+| `pnpm contracts:check` | ✅ 通过 |
 
 ## 5. 已知问题（如实标注，不伪造）
 
-1. **CI 整体为红 = 存量测试债，不是构建失败**：仓库为 public，Actions 正常分配 runner。ubuntu / windows 的 `Checks` job 中 install、`contracts:check`、`typecheck`、`lint` 全部通过，仅 `Unit tests` 失败；`Browser smoke` 的 landing / dualwindow 用例失败。失败用例共 41 个（web 25 / local-api 15 / mobile-console 1），均为原仓库既有的产品行为与 UI 漂移。
-2. **历史测试债已与构建阻断区分**：两个陈旧测试文件已按当前组件 API 修正，干净环境 `pnpm typecheck` 与 `pnpm build` 均通过。
-3. **`pnpm test` 有失败用例**：web / local-api / mobile-console 各一批，均为原仓库既有。
+1. **构建与测试现状**：本仓库存在既有的历史测试失败与构建注意事项，属遗留状态，不是协作文档引入的问题。具体结果以仓库当前实际命令输出与 CI 页面为准；本文件不把某次窗口运行的具体数值当作基线证据。
+2. **陈旧测试已按当前组件 API 修正**：构建与类型检查相关的两个历史测试已修正，`pnpm typecheck` 与 `pnpm build` 可通过。
 4. **全双工未通过产品验收**：ASR 为 Mock、意图为规则、TaskProjection 未接真实 HostedTask；P3（YU-405）保持未通过。此项是产品能力验收状态，不影响本次代码仓库快照与基础启动交接。
 5. **Web 源码无法 100% 重建服务器 release**：服务器元数据标记 `sourceBuildReproducible: false`，缺 card-packages authoring generator。
 
@@ -60,9 +59,11 @@
 
 ## 7. 接手步骤
 
+先由协作者复刻本仓库，并从**复刻后的协作者仓库**克隆（原始仓库不是开发目标）：
+
 ```bash
-git clone https://github.com/Bruce-Yii/vivic-team.git
-cd vivic-team
+git clone https://github.com/<COLLABORATOR_OWNER>/<COLLABORATOR_REPO>.git
+cd <COLLABORATOR_REPO>
 pnpm install --frozen-lockfile
 pnpm dev:web
 pnpm --filter @vivic/local-api start
