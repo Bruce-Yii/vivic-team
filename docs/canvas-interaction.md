@@ -1,6 +1,6 @@
 # 画布拖动、Pin 与 Control 设置接入
 
-> 主线集成更新（2026-10-15）：Control 设置、Stage/背景/字幕/全局减少动效均已挂载。Auto 的 dayStart/dayEnd 默认 07:00–19:00，可修改且支持跨夜；分钟边界及隐藏恢复更新，React Flow 和背景使用同一个 resolved theme。按尺寸排版、旧画布重叠修复及「重新排布」已实现。下文模块初次交付范围属于历史记录；当前实际浏览器结果见 [最终报告](../evidence/phase3-final/REPORT.md)。
+> 主线集成更新（2026-10-15）：Control 设置、Stage/背景/字幕/全局减少动效均已挂载。Auto 的 dayStart/dayEnd 默认 07:00–19:00，可修改且支持跨夜；分钟边界及隐藏恢复更新，React Flow 和背景使用同一个 resolved theme。按尺寸排版、旧画布重叠修复及「重新排布」已实现。下文模块初次交付范围属于历史记录；当前实际浏览器结果见 `最终报告`。
 
 本次仅修改 CanvasView、canvasStore、sync 四个模块，新增 CanvasSettings、相关测试和本说明。ControlApp、StageRoot、全局 CSS、cards、contracts 和 package 保持原样；由主线挂载设置和全局减少动效配置。
 

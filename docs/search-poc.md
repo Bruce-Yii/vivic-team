@@ -1,6 +1,6 @@
 # P2 搜索 PoC：Exa 历史受阻记录
 
-最新范围补充：本报告保留 Exa 子集的历史失败证据；StepFun 官方同一 Plan Key 的 StepSearch 已另行开发，最新事实见 [模型与语音核查](provider-voice-architecture.md) 及 [StepSearch 验证](../evidence/phase2-stepsearch/REPORT.md)。GPT OAuth 已恢复为待迁移，其他 OAuth 暂缓；本文旧范围描述不再代表最新计划。
+最新范围补充：本报告保留 Exa 子集的历史失败证据；StepFun 官方同一 Plan Key 的 StepSearch 已另行开发，最新事实见 [模型与语音核查](provider-voice-architecture.md) 及 `StepSearch 验证`。GPT OAuth 已恢复为待迁移，其他 OAuth 暂缓；本文旧范围描述不再代表最新计划。
 
 核验时间：2026-10-15，Asia/Shanghai。范围：真实 `pi-web-access` Exa keyless 搜索协议及公开网页安全读取。没有读取 `.env`、任何 Key 或 Pi 登录存储；没有启动/停止服务，没有运行 Web E2E。
 

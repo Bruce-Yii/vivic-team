@@ -4,7 +4,7 @@
 
 ## 先看哪些文件
 
-1. Vivic 的 [现有适配评估](../research/hark-reuse-assessment.md)：识别哪些可复用、哪些是研究素材。文中旧 Grainient 描述是历史；当前背景以根 AGENTS 的流光以太为准。
+1. Vivic 的 `现有适配评估`：识别哪些可复用、哪些是研究素材。文中旧 Grainient 描述是历史；当前背景以根 AGENTS 的流光以太为准。
 2. 上游 [设计分析](https://github.com/ECdison6227/hark-ui-research/blob/main/reports/design-analysis.md)、[卡片代码分析](https://github.com/ECdison6227/hark-ui-research/blob/main/reports/card-code-analysis.md)、[运行记录](https://github.com/ECdison6227/hark-ui-research/blob/main/reports/runtime-analysis.md)。
 3. 当前 Vivic 的 `apps/web/src/index.css`、`cards/scene/sceneCards.css`、`control/ControlDialogContent.tsx`、已批准 UI 组件，用这些承接新样式。
 

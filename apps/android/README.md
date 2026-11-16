@@ -26,4 +26,4 @@ WebView 原生权限请求一律拒绝，扫码由单独的非 exported Activity
 
 本轮完整原生验收入口为 `VIVIC_ANDROID_FULL=1 pnpm --filter @vivic/web exec playwright test --config playwright.android-full.config.ts`。它使用独立 `vivic_online_20261023` AVD、18995/19445 端口、`dist-online-android-full` 构建、仅 debug 包信任的测试 CA 和模拟器图片摄像头；不读取物理相机/麦克风。初始便笺/待办/目标/计时是明确标记的 TEST 响应 fixture；手机后续文字建卡使用实际 owner/API/保存链路。该配置需要本机既有 AVD/证书，不是从空白电脑开箱即跑的 Android SDK 安装脚本。
 
-当前 0.1.9 / code 10 保留线上隔离会话接入，继续保持两页遥控：聊天向右滑进入纵向 Vivic Space，向左滑返回；设置仅手机明暗、字号与连接。电脑同步可见内容，当前图片只文案、已知普通计时摘要会在手机本地刷新余时。本轮来源与验收边界见 [线上手机更新](../../docs/updates/2026-10-23-online-mobile.md)；旧公网/原生验证见 [此前更新](../../docs/updates/2026-10-23-mobile-remote.md)。
+当前 0.1.9 / code 10 保留线上隔离会话接入，继续保持两页遥控：聊天向右滑进入纵向 Vivic Space，向左滑返回；设置仅手机明暗、字号与连接。电脑同步可见内容，当前图片只文案、已知普通计时摘要会在手机本地刷新余时。本轮来源与验收边界见 `线上手机更新`；旧公网/原生验证见 `此前更新`。

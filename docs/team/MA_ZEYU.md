@@ -16,7 +16,7 @@
 
 - [当前决策实现](../local-decision.md)、`apps/local-api/src/decision/manager.ts` / `intent.ts`：现有 MLX/固定模型与门控边界。
 - [便携评测包](../../scripts/decision-model/portable-benchmark/README.md)：现有合成用例、开发/留出集、fake HTTP 测试与报告格式。结果是有限候选选择评测，不是整个产品的开放参数抽取验收。
-- [JevHarness 候选记录](../research/jev-harness-assessment.md)：两个近似名称项目尚须确认，不直接搬 coding tools。
+- `JevHarness 候选记录`：两个近似名称项目尚须确认，不直接搬 coding tools。
 - `scripts/dev.mjs` 与 [语音职责](../provider-voice-architecture.md)：开发服务启动和用户本地模型启动器是两项能力；后者的连接和生命周期需定义。
 - xlz 原有模型测试结果尚未提供，本轮附件不能替代它。可以先做数据包校验与已掌握服务实验，缺失项如实列出。
 

@@ -38,12 +38,12 @@
 - 2026-10-23 手机定位纠正：首次配置在电脑，手机扫码后仅“聊天 / Vivic Space”两个主页面；聊天向右滑看单列纵向卡片，反向返回，不复刻自由画布。手机仅保留本机明暗/字号和连接设置，其余配置回电脑；不要恢复旧五标签/手机模板页。卡片内容由已配对电脑白名单投影，手机不建owner/画布DB；只读预览不授予扩展执行或任意远程编辑。电脑设置4组，保留隐藏面板的草稿与owner，见 `docs/updates/2026-10-23-mobile-remote.md`。
 - 保留已批准的 SmoothUI Orb、Assistant UI styled registry、React Flow、Motion、Radix/shadcn、Recharts；不要自行重画替代。2026-10-23 用户最新要求 UI 全面使用 library 的 Hark `26ac2724`，替换此前 TODAY 混合界面和旧背景。优先复用原 SVG、字体、连续圆角与透明材质；领域缺项保留现有 Lucide。三页共用冻结 Hark 天空，原 6 深 + 6 浅配色作为叠色保留，不增加动画形式选择。入口 `components/hark/` 与 `docs/updates/2026-10-23-hark-full-ui.md`；研究 partial 和目标适配差异需保留。
 - 当前 LLM 接 StepFun Coding Plan、GPT/Pi OAuth；用户已提出通用自带服务与预设连接方向，后续按路线中的具体任务扩展。语音独立；Pi 只迁移认证/模型，不启用 coding tools、session、扩展或 skills，不开发新 OAuth 协议。
-- 决策模型纳入本地版正式接入目标，支持 API 或本地运行；产品默认优先引导配置并使用，用户明确关闭时允许直接走 LLM。服务不可用或判断不确定时要有明确降级，不静默改成永久关闭。现有 Kev 默认关闭是旧实现状态，不代表新目标已完成。JevHarness 先做适配评估，见 [候选记录](docs/research/jev-harness-assessment.md)；当前仓库整理与 GitHub 教学流程不变。
+- 决策模型纳入本地版正式接入目标，支持 API 或本地运行；产品默认优先引导配置并使用，用户明确关闭时允许直接走 LLM。服务不可用或判断不确定时要有明确降级，不静默改成永久关闭。现有 Kev 默认关闭是旧实现状态，不代表新目标已完成。JevHarness 先做适配评估，见 `候选记录`；当前仓库整理与 GitHub 教学流程不变。
 - 模型只生成校验后的 Action/数据，不能执行代码或虚构联网数据。图片仅用于当前明确发送的请求。
 - 凭据不进入源码、文档、日志、浏览器存储或画布；`.env*`、`.cache/`、`evidence/` 默认不入 Git。不要删除本机验收证据。
 - 当前自动化测试静音，TTS 保持关闭，不采集物理麦克风；实际播放需用户后续明确允许。浏览器测试使用独立 context，不碰用户真实画布。
 - 自动排版须避开固定卡片；关注长文本、内容增长、撤销和旧画布恢复。两张均固定时不能擅自移动坐标。
 - 在当前开发分支继续，小步提交；不要重置/覆盖已有工作。未收到用户“提交 PR”等明确指令时，不自动推送、合并或发布。基线/分支约定见 [Git 工作方式](docs/GIT_WORKFLOW.md)。
-- 当前协作仓库为 `ECdison6227/vivic-canvas`，合入分支为 `main`；旧 `ECdison6227/vivic` / `agent/next-iteration` 只作历史记录。用户说“提交 PR”即授权提交本轮改动、推送任务分支到当前 `origin`，向 `ECdison6227/vivic-canvas:main` 创建 PR，无需重复确认。操作前核对实际 remote；不得按旧文档改写远端。标题和说明必须对应本轮实际修改，并写明验证结果；完成后返回 PR 链接。只创建，不合并、不启用自动合并。每轮修改使用对应的 PR，必要时新建独立分支，避免混入此前 PR 的改动。
+- 当前协作仓库为 `Bruce-Yii/vivic-team`（Private），协作主线为 `main`；原仓库 `Bruce-Yii/vivic` 与更早的 `ECdison6227/vivic-canvas` 只作历史与研发溯源，不再作为合入目标。用户说“提交 PR”即授权提交本轮改动、推送任务分支并创建 base 为 `vivic-team:main` 的 PR，无需重复确认。操作前核对实际 remote；标题和说明必须对应本轮实际修改并写明验证结果。只创建，不合并、不启用自动合并。每轮修改使用对应 PR，必要时新建分支，避免混入此前 PR 的改动。
 
 按改动运行相应检查；前端 `pnpm --filter @vivic/web test`，后端 `pnpm --filter @vivic/local-api test`，全量 `pnpm test`，类型 `pnpm typecheck`，构建 `pnpm build`。浏览器测试使用 5174/8788，串行运行不同 Playwright 命令，避免占用用户的 5173/8787。
