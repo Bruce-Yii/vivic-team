@@ -6,7 +6,7 @@
 
 GitHub 保存代码、任务和评审；GitHub Desktop 管理电脑上的代码版本；编辑器或编程 Agent 负责修改代码。
 
-1. 在 GitHub Desktop 选择 **File → Add local repository**，目录选 `C:\Users\edsjrcheng\Desktop\vivic\vivic-canvas`。上一级 `vivic` 不是 Git 仓库，已有代码无需再次 clone。
+1. 首次使用时，在 GitHub Desktop 选择 **File → Clone repository**，克隆 `Bruce-Yii/vivic-team`。已有本仓库的本地 clone 时，选择 **File → Add local repository**，指向你自己的 `vivic-team` 工作目录；不要直接复用旧 `vivic-canvas` 目录。
 2. 核对 Repository settings 中的 remote 为 `https://github.com/Bruce-Yii/vivic-team.git`。
 3. 开始新任务前，处理当前未提交内容，再切到 `main`，点击 **Fetch origin**，有更新则 **Pull origin**。
 4. 在 GitHub 建一项 Issue，写明验收条件；从 `main` 创建分支，例如 `feat/42-space-templates`。`42` 仅为示例，使用实际 Issue 编号。

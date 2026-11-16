@@ -1,6 +1,6 @@
 # 从这里开始（VIVIC 团队协作仓库）
 
-> 本仓库是 VIVIC 的团队协作基线：**服务器真实部署版本 + MOSS-Live 方向的全双工阶段成果**。
+> 本仓库是 VIVIC 的团队协作基线：**服务器后端部署基线对应的源码 + 当前可取得的 Web 可编辑源码 + MOSS-Live 方向的全双工阶段成果**。服务器 2026-11-08 Web release 的部分内容只有构建产物，没有完整可编辑源码，不属于本仓库可重建范围。
 > 仓库：`Bruce-Yii/vivic-team`（Private）。原仓库 `Bruce-Yii/vivic` 保持不动，仅作历史与研发溯源。
 
 ## 1. 这个仓库包含什么
@@ -55,8 +55,8 @@ pnpm --filter @vivic/web test turnTaking         # 定向单测
 - P3 全双工产品行为闭环（YU-405）未通过独立验收：连续多轮 ASR、真实插话意图、HostedTask 真实回执均未验证。
 
 **已知既有失败（原仓库同样存在，不是本仓库引入）**
-- `pnpm build` 的 `tsc -b` 阶段被 2 个陈旧测试阻断（`SettingsExperience.test.tsx` 的 `local` prop、`SpaceEditing.test.tsx` 的 `CanvasManager`/`onBeforeClear`）；产品本体用 `vite build` 可正常打包。
-- `pnpm test` 存在失败用例（web / local-api / mobile-console 各一批）。
+- 本次干净环境验证中，`pnpm typecheck` 通过（0 errors），`pnpm build` 的 Web + Mobile 构建通过。此前阻断构建的两个陈旧测试已按当前组件 API 修正；这不代表全量 `pnpm test` 已通过。
+- `pnpm test` 仍存在失败用例（web / local-api / mobile-console 各一批），属于本次交接前已存在的测试债；本轮未以修复全部产品测试为建仓前提。
 - GitHub Actions 当前无法执行：账号私有仓库 Actions 额度耗尽，job 在分配 runner 前即失败（`runner=""`、`steps=0`）。这不是代码失败。
 
 ## 4. 阅读顺序
