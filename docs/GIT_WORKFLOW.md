@@ -1,6 +1,6 @@
 # Git 协作约定
 
-当前协作仓库：`Bruce-Yii/vivic-team`（Private），协作主线 `main`。具体按钮步骤见 [贡献指南](../CONTRIBUTING.md)。
+当前协作仓库：`Bruce-Yii/vivic-team`（Public），协作主线 `main`。具体按钮步骤见 [贡献指南](../CONTRIBUTING.md)。
 
 ## 三人协作
 

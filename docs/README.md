@@ -1,11 +1,9 @@
 ﻿# 文档目录
 
-> **当前状态（2026-11-05）**：先看 [operations/current-state-20261105.md](operations/current-state-20261105.md)。
-> 仓库与线上对照见 [deployment/2026-11-05-repo-vs-server.md](deployment/2026-11-05-repo-vs-server.md)；
-> 验收套件/数据集/发版资产/阶段汇报在 [../tooling/](../tooling/)。
-> 基础设施与部署历史：operations/ 下的基础设施清单与部署时间线。
+> **当前入口**：[交接说明](../HANDOFF.md)（基线、范围、验证结果、已知问题）与 [根入口](../README_FIRST.md)（快速开始与能力边界）。
+> 服务器基线、部署与验收资料见 `operations/`、`deployment/`、[../tooling/](../tooling/)。
 
-当前入口集中在下表。历史报告放在 `archive/`，原始产品规格移到 `archive/handoff-kimi-v0.6/`。
+当前入口集中在下表。历史报告与归档源码不属于本仓库范围（`archive/`、`outputs/`、`work/` 等目录未纳入交接快照）。
 
 ## 开发必读
 
@@ -14,8 +12,7 @@
 | [根入口](../README_FIRST.md) | 新人/Agent 的阅读顺序 |
 | [贡献指南](../CONTRIBUTING.md) | 安装、启动、GitHub Desktop |
 | [当前交接](AGENT_HANDOFF.md) | 当前任务与运行边界 |
-| `2026-10-22 更新说明` | 本轮新增、更改、体验步骤与兼容性 |
-| `Windows 运行与扫码控制` | 本地分发包、真实模型质量、正式 owner 远控、部署与体验 |
+| [交接说明](../HANDOFF.md) | 源码基线、纳入/排除范围、验证结果与已知问题 |
 | [Git 约定](GIT_WORKFLOW.md) | 主仓库、fork、PR 与合入 |
 | [团队任务边界](TEAM_TASKS.md) | 按核心依赖分工、接口和代码范围 |
 | [会议后的正式分工草案](team/README.md) | 程佳锐/xlz/马泽瑜的8项可建立 Issue 的工单 |

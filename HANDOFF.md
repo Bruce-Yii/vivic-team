@@ -1,6 +1,6 @@
 # VIVIC 团队交接说明
 
-> 状态：源码快照、交接文档与基础运行验证已完成；GitHub Actions 远端 CI 因账号额度耗尽暂不可验证。仓库 `Bruce-Yii/vivic-team`（Private），协作主线 `main`。
+> 状态：源码快照、交接文档与基础运行验证已完成。仓库 `Bruce-Yii/vivic-team`（Public），协作主线 `main`。GitHub Actions 已可执行：install / contracts / typecheck / lint 双平台通过，Unit tests 与 Browser smoke 因存量测试债失败。
 
 ## 1. 基线来源
 
@@ -46,7 +46,7 @@
 
 ## 5. 已知问题（如实标注，不伪造）
 
-1. **GitHub Actions 无法执行**：账号私有仓库 Actions 额度耗尽，job 在分配 runner 前即失败（`runner=""`、`steps=0`、3–7 秒）。最后一次成功 run 为 2026-11-15 09:17 UTC。这与代码质量无关，恢复额度或改用自托管 runner 后才能取得 CI 证据。
+1. **CI 整体为红 = 存量测试债，不是构建失败**：仓库为 public，Actions 正常分配 runner。ubuntu / windows 的 `Checks` job 中 install、`contracts:check`、`typecheck`、`lint` 全部通过，仅 `Unit tests` 失败；`Browser smoke` 的 landing / dualwindow 用例失败。失败用例共 41 个（web 25 / local-api 15 / mobile-console 1），均为原仓库既有的产品行为与 UI 漂移。
 2. **历史测试债已与构建阻断区分**：两个陈旧测试文件已按当前组件 API 修正，干净环境 `pnpm typecheck` 与 `pnpm build` 均通过。
 3. **`pnpm test` 有失败用例**：web / local-api / mobile-console 各一批，均为原仓库既有。
 4. **全双工未通过产品验收**：ASR 为 Mock、意图为规则、TaskProjection 未接真实 HostedTask；P3（YU-405）保持未通过。此项是产品能力验收状态，不影响本次代码仓库快照与基础启动交接。
