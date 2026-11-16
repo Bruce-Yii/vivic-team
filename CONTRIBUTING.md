@@ -20,6 +20,8 @@ GitHub 保存代码、任务和评审；GitHub Desktop 管理电脑上的代码�
 
 首轮采用 **fork + PR**，不授予主仓库写权限。伙伴在 GitHub 将 `Bruce-Yii/vivic-team` fork 到自己的账号，在 Desktop clone 自己的 fork；`origin` 是个人 fork，`upstream` 是主仓库。核对主仓库最新 `main` 后，从同一基线创建自己的任务分支。不要把上面维护者的本机目录或 `origin` 地址照搬到伙伴电脑。
 
+前端源码留存、服务器发布产物和跨设备版本同步按 [专项规范](docs/team/FRONTEND_SOURCE_AND_VERSION_SYNC.md) 执行。
+
 先从 [任务边界与示例](docs/TEAM_TASKS.md) 中确定各自的一项任务，再写 Issue 的允许文件、接口、样例和验收步骤。可以交付新功能代码和测试；共享契约、核心流程、依赖或工作流的跨模块变更须按任务明确协调，不顺手扩展。
 
 完成后推到自己的 fork，PR 的 base 仍是 `Bruce-Yii/vivic-team:main`。维护者核对范围、接口和验证结果再决定合入。优先选择可独立开发的任务；有核心依赖时先确定接口和集成点，避免互相等待。[fork 权限说明](https://docs.github.com/en/pull-requests/reference/forks)
