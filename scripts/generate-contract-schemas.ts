@@ -1,8 +1,9 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { createWireJsonSchemas } from "../packages/contracts/src/wireJsonSchema";
 
 const directory = new URL("../Vivic_Kimi_Handoff_v0.6/contracts/", import.meta.url);
 const check = process.argv.includes("--check");
+if (!check) await mkdir(directory, { recursive: true });
 for (const [name, schema] of Object.entries(createWireJsonSchemas())) {
   const target = new URL(name, directory);
   const expected = `${JSON.stringify(schema, null, 2)}\n`;
