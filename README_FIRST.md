@@ -1,7 +1,7 @@
 # 从这里开始（VIVIC 团队协作仓库）
 
-> 本仓库是 VIVIC 的团队协作基线：**服务器后端部署基线对应的源码 + 当前可取得的 Web 可编辑源码 + MOSS-Live 方向的全双工阶段成果**。服务器 2026-11-08 Web release 的部分内容只有构建产物，没有完整可编辑源码，不属于本仓库可重建范围。
-> 仓库：`Bruce-Yii/vivic-team`（Public）。原仓库 `Bruce-Yii/vivic` 保持不动，仅作历史与研发溯源。
+> 本仓库是 VIVIC 的**原始基准仓库**：保存服务器后端部署基线对应的源码、当前可取得的 Web 可编辑源码，以及 MOSS-Live 方向的全双工阶段成果。服务器 2026-11-08 Web release 的部分内容只有构建产物，没有完整可编辑源码，不属于本仓库可重建范围。
+> 原始仓库：`Bruce-Yii/vivic-team`（Public）。后续实际协作前，由协作者将本仓库复刻到自己账号下；**复刻后的协作者仓库才是唯一开发、任务、PR 和集成工作区**。本仓库默认只作来源参考，不作为后续协作目标。
 
 ## 1. 这个仓库包含什么
 
@@ -57,20 +57,20 @@ pnpm --filter @vivic/web test turnTaking         # 定向单测
 **已知既有失败（原仓库同样存在，不是本仓库引入）**
 - 本次干净环境验证中，`pnpm typecheck` 通过（0 errors），`pnpm build` 的 Web + Mobile 构建通过。此前阻断构建的两个陈旧测试已按当前组件 API 修正；这不代表全量 `pnpm test` 已通过。
 - `pnpm test` 仍存在失败用例（web / local-api / mobile-console 各一批），属于本次交接前已存在的测试债；本轮未以修复全部产品测试为建仓前提。
-- GitHub Actions 当前无法执行：账号私有仓库 Actions 额度耗尽，job 在分配 runner 前即失败（`runner=""`、`steps=0`）。这不是代码失败。
 
 ## 4. 阅读顺序
 
 1. 本文件 → 2. `HANDOFF.md`（交接范围与验收状态）→ 3. `AGENTS.md`（协作与边界规则）
-2. 前端源码、构建产物与多设备版本同步：`docs/team/FRONTEND_SOURCE_AND_VERSION_SYNC.md`
+2. 实际协作仓库、前端源码留存与版本同步：`docs/team/FRONTEND_SOURCE_AND_VERSION_SYNC.md`
 3. 架构约束：`docs/moss-live-full-duplex-architecture-constraints.md`（MOSS-Live 对齐的职责划分）
 4. 设计与决策记录：`docs/decisions/`、`docs/design/`
 5. 历史验证：`docs/verification/`
 
 ## 5. 协作约定
 
+- 本仓库是原始来源，不是后续实际协作工作区。后续所有 Issue、任务分支、commit、PR 和集成都在协作者复刻后的仓库中完成。
+- 所有参与者 clone 同一个协作者仓库；`origin` 指向该仓库。PR 的 base 必须是该仓库自己的默认分支，不得默认指向 `Bruce-Yii/vivic-team`。
 - 前端源码与服务器发布版本按 [源码留存与版本同步规范](docs/team/FRONTEND_SOURCE_AND_VERSION_SYNC.md) 执行；不以服务器 bundle 代替源码。
-- 分支：从 `main` 切任务分支，PR 回 `main`；一个任务一个 PR。
 - 不把 Mock/规则实现写成真实供应商能力；新增能力必须有可复现测试。
 - 不提交凭据、生产数据库或线上配置；`.env*` 默认不入库。
-- 线上部署、生产配置变更需要单独明确授权；本仓库不承担部署职责。
+- 线上部署、生产配置变更需要单独明确授权；本规范不授权部署。
