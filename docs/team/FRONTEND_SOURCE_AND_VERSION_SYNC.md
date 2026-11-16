@@ -198,9 +198,9 @@ Git 不会自动把一个人的本地修改同步给其他人：
 - Build 步骤因前面的 Unit tests 失败而被跳过；本次 run 不构成构建通过证据。
 - Browser smoke 为 9/10 通过。B02 在点击“关闭全屏提示”时，`.vivic-space-loading` 遮罩拦截了指针事件。需确认等待条件是否不足，或加载遮罩是否错误阻断交互；在修复并复跑前不能标记 Browser smoke 通过。
 
-### CI 分层决策
+### CI 分层方案（尚待落实到 workflow）
 
-当前采用分层，而不是删测试或把失败伪装成绿色：
+下一次修改 CI workflow 时按以下结构落地，而不是删测试或把失败伪装成绿色。目前仓库 workflow 仍将 Unit tests 和 Build 放在同一个 checks job 中；本节是协作决策，不代表分层已经生效：
 
 1. **Required quality gate**：依赖安装、契约检查、类型检查、Lint、构建。构建必须独立于单测失败运行，不能因为测试失败而被跳过。
 2. **Unit test diagnostics**：web、local-api、mobile-console 分开运行并保留各自日志；存量失败未核清前可暂不作为全仓合并阻断项，但必须显示真实失败，不得标记为通过。
