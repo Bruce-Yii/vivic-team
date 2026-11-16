@@ -8,13 +8,13 @@
 
 | 能力 | 当前实现 | 证据与限制 |
 | --- | --- | --- |
-| StepFun 规划 | Plan Key、目录+短推理连接校验、结构化动作、多事项提醒 | [Plan 说明](stepfun-plan-tts.md)、[语音输入验收](../evidence/phase2-voice-input/REPORT.md)保留历史真实请求；Key 只在后端内存 |
-| GPT 规划 | Pi 1.2.0 OAuth/provider、既有登录及 refresh，新登录入口 | [GPT live](../evidence/phase3-gpt/live.json)：真实 `gpt-6-luna` 推理、多事项提醒；动作仅检查未派发。新 OAuth 完整交互未实测 |
-| 搜索 | StepFun StepSearch；GPT OAuth Responses `web_search` | [StepSearch](../evidence/phase2-stepsearch/REPORT.md)、[GPT live](../evidence/phase3-gpt/live.json)、[浏览器 live](../evidence/phase3-live-browser/live.json)；真实来源不等于全文已读 |
+| StepFun 规划 | Plan Key、目录+短推理连接校验、结构化动作、多事项提醒 | [Plan 说明](stepfun-plan-tts.md)、`语音输入验收`保留历史真实请求；Key 只在后端内存 |
+| GPT 规划 | Pi 1.2.0 OAuth/provider、既有登录及 refresh，新登录入口 | `GPT live`：真实 `gpt-6-luna` 推理、多事项提醒；动作仅检查未派发。新 OAuth 完整交互未实测 |
+| 搜索 | StepFun StepSearch；GPT OAuth Responses `web_search` | `StepSearch`、`GPT live`、`浏览器 live`；真实来源不等于全文已读 |
 | 视觉 | 当次附件、Sharp 完整解码、当前模型能力检查 | 浏览器 GPT 从自生成 TEST 图片得到 `17 + 26 = 43` 并创建便笺；未使用用户图片，不代表任意图片或模型均验收 |
 | ASR | 独立选关闭、StepFun Plan、本地 Sherpaw X-ASR | 云端有合成麦克风真实请求；本地有合成 WAV/虚拟 AudioWorklet 真实 WASM；物理麦克风未验收 |
 | TTS | 独立选关闭、StepFun Plan、浏览器 `localService` 音色 | 云端有历史接口/播放记录；浏览器音色仅模拟事件测试，无实际发声验收；最新测试静音/TTS 关闭 |
-| VAD/KWS | Sherpaw Worker、默认下载并缓存、前台单句，默认不开麦；唤醒词 `vivic` | [本地语音归档](../evidence/phase3-local-speech/REPORT.md)是旧版实测；`vivic` 的实际词表已核对，真人唤醒率仍待验收 |
+| VAD/KWS | Sherpaw Worker、默认下载并缓存、前台单句，默认不开麦；唤醒词 `vivic` | `本地语音归档`是旧版实测；`vivic` 的实际词表已核对，真人唤醒率仍待验收 |
 
 STT/TTS 不依附所选 LLM。可以使用 GPT 加独立 StepFun 语音、本地 ASR，或纯文字；未配置音频不阻塞模型连接。LLM、搜索、视觉、ASR 和 TTS 分别验证，不能从 OAuth 成功推导语音权限，也不因换 LLM 擅自切换语音 provider。
 
@@ -61,6 +61,6 @@ StepFun TTS 默认关闭，用户显式开启后才请求；浏览器 TTS 同样
 
 七卡 renderer 已接通。天气由 Open-Meteo/GeoNames adapter 提供，明确模型有效时间；最简温度/图标整体提供来源链接，Radix HoverCard 按需显示 Open-Meteo、GeoNames、CC BY 4.0 及字段/图标转换说明，默认不加 footer。表格/图表只接受用户数值或现有 ctx 数据转换，保留 provenance，混合破坏性操作澄清。模型不能直接补造 Weather/Table/Chart。图片仅作为当次视觉附件，Sharp 有界完整解码，失败/无视觉能力即拒绝，不丢图后冒充视觉回答。见 [data-providers](data-providers.md)、[data-cards](data-cards.md)、[image-input](image-input.md)。
 
-拖动/Pin、主题和减少动效已实现，Display 交互由 owner 校验并落盘确认。最新[真实浏览器记录](../evidence/phase3-live-browser/live.json)5/5 通过，7 卡在刷新前后 `overlaps: []`；[Chromium 全套](../evidence/phase3-final/chromium.json)58/58、约 4.5 分钟通过。此处无重叠结论限于已测场景。[稳定性审计](../evidence/phase3-stability/final-resource-audit.json)仍保留旧快照约 30 分钟 23/24、新快照 14/14 专项且 soak 约 61 秒的区别；全套浏览器通过不替代新版完整 30 分钟验收。
+拖动/Pin、主题和减少动效已实现，Display 交互由 owner 校验并落盘确认。最新`真实浏览器记录`5/5 通过，7 卡在刷新前后 `overlaps: []`；`Chromium 全套`58/58、约 4.5 分钟通过。此处无重叠结论限于已测场景。`稳定性审计`仍保留旧快照约 30 分钟 23/24、新快照 14/14 专项且 soak 约 61 秒的区别；全套浏览器通过不替代新版完整 30 分钟验收。
 
 Laya 当前组合 **NO_GO / MODEL_OR_ADAPTER_UNCERTAIN**；Winnow **BLOCKED**，未下载/运行或生产接入。Google/Claude/Grok 等不在本轮两 LLM 范围。本次仅据本地资料更新文档，没有新建服务、模型测试、浏览器会话、麦克风或音频输出。

@@ -7,22 +7,22 @@
 GitHub 保存代码、任务和评审；GitHub Desktop 管理电脑上的代码版本；编辑器或编程 Agent 负责修改代码。
 
 1. 在 GitHub Desktop 选择 **File → Add local repository**，目录选 `C:\Users\edsjrcheng\Desktop\vivic\vivic-canvas`。上一级 `vivic` 不是 Git 仓库，已有代码无需再次 clone。
-2. 核对 Repository settings 中的 remote 为 `https://github.com/ECdison6227/vivic-canvas.git`。
+2. 核对 Repository settings 中的 remote 为 `https://github.com/Bruce-Yii/vivic-team.git`。
 3. 开始新任务前，处理当前未提交内容，再切到 `main`，点击 **Fetch origin**，有更新则 **Pull origin**。
 4. 在 GitHub 建一项 Issue，写明验收条件；从 `main` 创建分支，例如 `feat/42-space-templates`。`42` 仅为示例，使用实际 Issue 编号。
 5. 用编辑器或 Agent 开发。Desktop 的 **Changes** 中检查差异，勾选本次任务文件，写说明后 **Commit to 分支名**。Commit 只保存在本机。
-6. 完成必要验证后，点击 **Publish branch / Push origin** 上传分支，再 **Preview Pull Request → Create Pull Request**。核对 base 是 `ECdison6227/vivic-canvas:main`。
+6. 完成必要验证后，点击 **Publish branch / Push origin** 上传分支，再 **Preview Pull Request → Create Pull Request**。核对 base 是 `Bruce-Yii/vivic-team:main`。
 7. 在 GitHub 看差异与检查结果，实际验收后由维护者合并 PR。回 Desktop 更新 `main`，再开始下一项任务。
 
 官方操作：[添加本地仓库](https://docs.github.com/en/desktop/adding-and-cloning-repositories/adding-a-repository-from-your-local-computer-to-github-desktop)、[创建 Issue 和 PR](https://docs.github.com/en/desktop/working-with-your-remote-repository-on-github-or-github-enterprise/creating-an-issue-or-pull-request-from-github-desktop)。
 
 ## 两位伙伴加入时
 
-首轮采用 **fork + PR**，不授予主仓库写权限。伙伴在 GitHub 将 `ECdison6227/vivic-canvas` fork 到自己的账号，在 Desktop clone 自己的 fork；`origin` 是个人 fork，`upstream` 是主仓库。核对主仓库最新 `main` 后，从同一基线创建自己的任务分支。不要把上面维护者的本机目录或 `origin` 地址照搬到伙伴电脑。
+首轮采用 **fork + PR**，不授予主仓库写权限。伙伴在 GitHub 将 `Bruce-Yii/vivic-team` fork 到自己的账号，在 Desktop clone 自己的 fork；`origin` 是个人 fork，`upstream` 是主仓库。核对主仓库最新 `main` 后，从同一基线创建自己的任务分支。不要把上面维护者的本机目录或 `origin` 地址照搬到伙伴电脑。
 
 先从 [任务边界与示例](docs/TEAM_TASKS.md) 中确定各自的一项任务，再写 Issue 的允许文件、接口、样例和验收步骤。可以交付新功能代码和测试；共享契约、核心流程、依赖或工作流的跨模块变更须按任务明确协调，不顺手扩展。
 
-完成后推到自己的 fork，PR 的 base 仍是 `ECdison6227/vivic-canvas:main`。维护者核对范围、接口和验证结果再决定合入。优先选择可独立开发的任务；有核心依赖时先确定接口和集成点，避免互相等待。[fork 权限说明](https://docs.github.com/en/pull-requests/reference/forks)
+完成后推到自己的 fork，PR 的 base 仍是 `Bruce-Yii/vivic-team:main`。维护者核对范围、接口和验证结果再决定合入。优先选择可独立开发的任务；有核心依赖时先确定接口和集成点，避免互相等待。[fork 权限说明](https://docs.github.com/en/pull-requests/reference/forks)
 
 建议使用一个 GitHub Projects 看板：Backlog（候选）→ Ready（可开工）→ In progress（开发中）→ Review（待验收）→ Done（已合并并验收）。每人同时做一项，未满足前置依赖的任务留在 Backlog。路线里的 `Lxx` 编号只是本地任务编号，实际建 Issue 后再记录对应链接。[创建项目看板](https://docs.github.com/en/issues/planning-and-tracking-with-projects/creating-projects/creating-a-project)
 

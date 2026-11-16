@@ -12,17 +12,17 @@
 
 **2026-10-15 16:39:40 +08:00 冻结实现。** 不再改动模块、组件、manifest 或脚本，不启动新的推理/浏览器验证，以免干扰主线全量回归和 soak。冻结后仅核对并归档已有 JSON 证据；53 项单测和类型检查是实现轮的结果，归档时没有重跑。
 
-37 个实现/组件/脚本/manifest/测试文件的逐文件 SHA-256 和聚合指纹见 [module-freeze.json](../evidence/phase3-local-speech/module-freeze.json)。聚合指纹：`a2579234802939c0e0784767266b808ae312f02d2be90c4a96c6a90754614128`。本文是状态说明，不包含在该代码指纹内。
+37 个实现/组件/脚本/manifest/测试文件的逐文件 SHA-256 和聚合指纹见 `module-freeze.json`。聚合指纹：`a2579234802939c0e0784767266b808ae312f02d2be90c4a96c6a90754614128`。本文是状态说明，不包含在该代码指纹内。
 
-最终交付证据已复制到 [`evidence/phase3-local-speech/`](../evidence/phase3-local-speech/REPORT.md)，见[交付报告](../evidence/phase3-local-speech/REPORT.md)及[归档校验清单](../evidence/phase3-local-speech/CHECKSUMS.json)。归档未改变下列原始报告/截图字节，也未改变接口冻结状态。
+最终交付证据已复制到 ``evidence/phase3-local-speech/``，见`交付报告`及`归档校验清单`。归档未改变下列原始报告/截图字节，也未改变接口冻结状态。
 
 冻结时已有证据：
 
 | 证据 | 实际结论 | SHA-256 |
 | --- | --- | --- |
-| [browser-result.json](../evidence/phase3-local-speech/browser-result.json) | 17/17 独立生产浏览器用例通过，page/console error 为 0 | `43eeee804a50ec7c5b5abf113eec3aece070c620dd0f4572431949dd77b02023` |
-| [ui-result.json](../evidence/phase3-local-speech/ui-result.json) | 独立开发页通过，零麦克风调用、无 public raw import 错误 | `1cca69da48dd3222dae0c4aaf7effd59e434db493fb3cbaab771bce2d0539549` |
-| [设置与唤醒组件截图](../evidence/phase3-local-speech/settings-and-wake.png) | 已实渲染检查，默认不开麦 | `2c2f87ab7f535fbf8326cd9aeedb7e481bdecd7c3728ee4b2eec9f79d5dbffb1` |
+| `browser-result.json` | 17/17 独立生产浏览器用例通过，page/console error 为 0 | `43eeee804a50ec7c5b5abf113eec3aece070c620dd0f4572431949dd77b02023` |
+| `ui-result.json` | 独立开发页通过，零麦克风调用、无 public raw import 错误 | `1cca69da48dd3222dae0c4aaf7effd59e434db493fb3cbaab771bce2d0539549` |
+| `设置与唤醒组件截图` | 已实渲染检查，默认不开麦 | `2c2f87ab7f535fbf8326cd9aeedb7e481bdecd7c3728ee4b2eec9f79d5dbffb1` |
 
 **没有当前仍阻塞文件 PoC 的失败项；不等于现场语音验收通过。** 真实 ASR/VAD/虚拟 AudioWorklet 三条链路都返回「十分钟后提醒我喝水」。真实 KWS 命中只对样本中「十分钟」成立；默认「你好维维」仅完成真实词表校验、native 初始化和静音不触发，缺少该短语音频，不能把它记作已通过的声学唤醒。物理麦克风、发声、Safari、长时唤醒及误触发率没有测试。
 
@@ -205,8 +205,8 @@ CLI 下载逐字节核验写出的磁盘文件，使用原子 rename，临时文
 2026-10-15 本机 **Apple M1 / 8 GiB，Headless Chrome 156.0.8078.4**：
 
 - **53 个专属单测通过**：校验/截断/超限、取消与缓存 lease、过期 generation、队列上限、PCM 与时限、TTS 事件/参数、设置默认不下载、UI owner/PTT/provider/TTS/失焦取消、晚到权限流清理等。局部 TypeScript 检查通过。
-- **17 个独立生产浏览器项目通过，page/console error 为 0**；最终该轮端口 `54349` 已关闭。完整原始报告：[browser-result.json](../evidence/phase3-local-speech/browser-result.json)。
-- **独立 Vite 开发页检查通过**：启用正常 public 目录规则，设置和单次唤醒组件均真实挂载；3 个模型条目、固定短语标签、默认零麦克风调用，page/console error 为 0，无 public raw import。端口 `59402` 已关闭。[ui-result.json](../evidence/phase3-local-speech/ui-result.json)、[实渲染截图](../evidence/phase3-local-speech/settings-and-wake.png)；截图已检查，使用现有 Button、Lucide 与项目 CSS。
+- **17 个独立生产浏览器项目通过，page/console error 为 0**；最终该轮端口 `54349` 已关闭。完整原始报告：`browser-result.json`。
+- **独立 Vite 开发页检查通过**：启用正常 public 目录规则，设置和单次唤醒组件均真实挂载；3 个模型条目、固定短语标签、默认零麦克风调用，page/console error 为 0，无 public raw import。端口 `59402` 已关闭。`ui-result.json`、`实渲染截图`；截图已检查，使用现有 Button、Lucide 与项目 CSS。
 - **真实 X-ASR 文件识别**：仅使用现有 `evidence/phase2-voice-input/synthetic-command.wav`（11.184 秒，合成音，非现场麦克风），返回「十分钟后提醒我喝水」。该轮含缓存读取/再次 SHA/初始化和识别为 **7.40 秒**；VAD 分段 → 本地 ASR 串联 **4.48 秒**，同样返回完整命令。
 - **真实 AudioWorklet 验证**：授权 WAV → AudioBufferSource/虚拟 MediaStream → 原 public AudioWorklet → 本模块有状态 48k→16k → Silero VAD → X-ASR，输出同一句文字。收到 58,016 个 16k PCM 帧，整条含实时文件播放时钟和推理 **11.17 秒**。没有请求物理麦克风；音源不连接扬声器，capture 输出零增益，浏览器额外 `--mute-audio`。本测试允许自动恢复 AudioContext 仅为虚拟音源验收，不能替代实际用户手势/权限 UX。
 - **KWS**：真实权重识别合成录音中的「十分钟」，再交有界 VAD 段；固定「你好维维」的 token/native 初始化及静音不触发通过，未录制该默认短语做声学命中验收。

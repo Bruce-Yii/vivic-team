@@ -5,7 +5,7 @@
 > 验收套件/数据集/发版资产/阶段汇报在 [../tooling/](../tooling/)。
 > 基础设施与部署历史：operations/ 下的基础设施清单与部署时间线。
 
-当前入口集中在下表。历史报告放在 [archive/](archive/README.md)，原始产品规格移到 [archive/handoff-kimi-v0.6/](../archive/handoff-kimi-v0.6/)。
+当前入口集中在下表。历史报告放在 `archive/`，原始产品规格移到 `archive/handoff-kimi-v0.6/`。
 
 ## 开发必读
 
@@ -14,8 +14,8 @@
 | [根入口](../README_FIRST.md) | 新人/Agent 的阅读顺序 |
 | [贡献指南](../CONTRIBUTING.md) | 安装、启动、GitHub Desktop |
 | [当前交接](AGENT_HANDOFF.md) | 当前任务与运行边界 |
-| [2026-10-22 更新说明](updates/2026-10-22-card-platform.md) | 本轮新增、更改、体验步骤与兼容性 |
-| [Windows 运行与扫码控制](updates/2026-10-22-local-runtime-mobile.md) | 本地分发包、真实模型质量、正式 owner 远控、部署与体验 |
+| `2026-10-22 更新说明` | 本轮新增、更改、体验步骤与兼容性 |
+| `Windows 运行与扫码控制` | 本地分发包、真实模型质量、正式 owner 远控、部署与体验 |
 | [Git 约定](GIT_WORKFLOW.md) | 主仓库、fork、PR 与合入 |
 | [团队任务边界](TEAM_TASKS.md) | 按核心依赖分工、接口和代码范围 |
 | [会议后的正式分工草案](team/README.md) | 程佳锐/xlz/马泽瑜的8项可建立 Issue 的工单 |
@@ -43,7 +43,7 @@
 | 外部数据 | [数据适配](data-providers.md)、[搜索回退](search-fallback-20261016.md)、[图片输入](image-input.md) |
 | 语音 | [本地语音](local-speech.md)、[反馈](voice-feedback.md)、[Plan TTS](stepfun-plan-tts.md)、[ASR](stepfun-asr.md) |
 | 实验能力 | [决策模型](local-decision.md)、[评估](decision-model-review.md)、[评测包](decision-model-test-kit.md)、[Laya 记录](laya-poc.md) |
-| 决策接入候选 | [JevHarness 初步适配](research/jev-harness-assessment.md)，对应路线 L04 |
+| 决策接入候选 | `JevHarness 初步适配`，对应路线 L04 |
 | 官网 | [内测入口现状](website-beta-only.md)、[联系信息](website-contact.md)，当前由维护者保管 |
 | 许可证与素材 | [项目许可证清单](../LICENSES.md)、[图片来源](images/README.md)、`third-party/` |
 

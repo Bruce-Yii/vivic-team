@@ -1,11 +1,32 @@
-# Vivic 独立 Space 服务
+# VIVIC
 
-部署与验证边界见 [部署说明](docs/online-deployment.md)，持久数据维护见 [备份和恢复](docs/hosted-data-backup.md)。本包不包含私人数据或模型凭据。
+VIVIC 是一个 Web 信息画布产品：用户用自然语言让 Agent 在画布上创建/操作卡片，并支持实时语音交互。
 
-## 当前状态（2026-11-05）
+本仓库是团队协作基线（Private），包含服务器真实部署版本的源码与 MOSS-Live 方向的全双工阶段成果。
 
-- 仓库与线上对照、怎么跑、还差什么：见 [docs/operations/current-state-20261105.md](docs/operations/current-state-20261105.md)
-- 基础设施、路径、部署历史：[docs/operations/infrastructure-inventory.md](docs/operations/infrastructure-inventory.md)、[deploy-timeline.md](docs/operations/deploy-timeline.md)
-- 当前线上版本快照（sha/镜像/前端 tag/开关，不含密钥）：[deploy/manifests/live-20261105.json](deploy/manifests/live-20261105.json)
-- 验收套件、数据集、发版资产、阶段汇报与前端交接：[tooling/](tooling/)
-- 仓库与服务器的对应关系：[docs/deployment/2026-11-05-repo-vs-server.md](docs/deployment/2026-11-05-repo-vs-server.md)
+- 快速开始与能力边界：见 [README_FIRST.md](README_FIRST.md)
+- 交接范围与验收状态：见 [HANDOFF.md](HANDOFF.md)
+- 协作规则：见 [AGENTS.md](AGENTS.md)、[CONTRIBUTING.md](CONTRIBUTING.md)
+
+## 组成
+
+| 目录 | 说明 |
+| --- | --- |
+| `apps/web` | Web 前端（控制页 `/`、设置页 `/control`、展示页 `/display`） |
+| `apps/local-api` | 本地 API：意图管线、卡片构建、Hosted Tasks、Space、语音/识别网关 |
+| `apps/android` | Android WebView 壳（原 Android 客户端） |
+| `contrib/mobile-console` | 手机遥控原型 |
+| `packages/contracts` | 共享 Zod 契约（Action / Card / Space / ASR 传输） |
+| `packages/card-runtime` | 卡片定义与运行时 |
+
+## 技术栈
+
+React 19 + Vite + Tailwind + Hark UI；Hono + SQLite；TypeScript；vitest + Playwright。
+
+## 状态
+
+功能可用性、真实/Mock 边界和已知失败见 [README_FIRST.md](README_FIRST.md) 第 3 节。不要把阶段成果当作完整产品。
+
+## 许可证与第三方素材
+
+见 [LICENSES.md](LICENSES.md)。使用前请核对第三方素材的授权范围。

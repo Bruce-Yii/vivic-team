@@ -12,7 +12,7 @@
 
 ## 当前线上快照
 
-- 机器可读：[manifests/live-20261105.json](manifests/live-20261105.json)
+- 机器可读：`manifests/live-20261105.json`
 - 项目当前状态：[../docs/operations/current-state-20261105.md](../docs/operations/current-state-20261105.md)
 - 仓库与服务器对应：[../docs/deployment/2026-11-05-repo-vs-server.md](../docs/deployment/2026-11-05-repo-vs-server.md)
 - 分批发布计划：[../docs/deployment/2026-11-05-repo-vs-server.md](../docs/deployment/2026-11-05-repo-vs-server.md)（§5）

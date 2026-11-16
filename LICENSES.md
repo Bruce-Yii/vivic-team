@@ -34,7 +34,7 @@
 
 一期收尾新增开发测试依赖 `ajv@8.20.0`、`ajv-formats@3.0.1`，安装包元数据均为 MIT，仅用于 JSON Schema/运行时契约回归，不新增产品运行组件。JSON Schema 由既有 Zod 的 `toJSONSchema` 生成，未接入另一套卡片渲染器。
 
-`cmdk@1.1.1`（https://github.com/pacocoursey/cmdk）和 `pinyin-match@1.2.10`（https://github.com/xmflswood/pinyin-match）均来自 npm 精确版本，包内 MIT 许可全文保留在 [第三方许可](docs/third-party/experience/)。shadcn radix-nova Command registry 源码（2026-10-16）接入现有 Radix Dialog、Lucide 和主题，MIT 全文同目录保留。原始 registry 与所用发行文件 SHA256、适配范围见 [本次说明](docs/archive/2026-10/experience-20261016.md)。未复用 HARK 私有实现或字体。
+`cmdk@1.1.1`（https://github.com/pacocoursey/cmdk）和 `pinyin-match@1.2.10`（https://github.com/xmflswood/pinyin-match）均来自 npm 精确版本，包内 MIT 许可全文保留在 [第三方许可](docs/third-party/experience/)。shadcn radix-nova Command registry 源码（2026-10-16）接入现有 Radix Dialog、Lucide 和主题，MIT 全文同目录保留。原始 registry 与所用发行文件 SHA256、适配范围见 `本次说明`。未复用 HARK 私有实现或字体。
 
 ## UI 基础与支撑依赖
 
@@ -65,13 +65,13 @@
 | `@sherpaw/asr`、`@sherpaw/kws`、`@sherpaw/vad`、`@sherpaw/preloader` | **各 0.3.0** | **Apache-2.0**，四包 package.json 与 LICENSE；npm repository 为 `sumimakito/sherpaw`，本地上游核查记录 `moeru-ai/sherpaw` SHA `2b12da09ab0cf45894e9565c386bf003cf44a106` | 按需本地 ASR/KWS/VAD 与模型缓存，不包含已验证的 Sherpaw TTS |
 | `sharp` | **0.35.5** | **Apache-2.0**，包内 LICENSE；仓库 `lovell/sharp` | 当次图片的完整本机像素解码；见 [image-input](docs/image-input.md) |
 
-Pi 是实际 npm 运行依赖，不能再写成「尚未安装任何 Pi runtime」；安装这些包也不等于启用了完整 coding agent。新 OAuth 交互未实测，既有 Pi OAuth 推理/搜索成功见 [真实记录](evidence/phase3-gpt/live.json)。
+Pi 是实际 npm 运行依赖，不能再写成「尚未安装任何 Pi runtime」；安装这些包也不等于启用了完整 coding agent。新 OAuth 交互未实测，既有 Pi OAuth 推理/搜索成功见 `真实记录`。
 
 Sharp JavaScript 包许可不能覆盖全部 native 二进制依赖：本机安装的 `@img/sharp-libvips-darwin-arm64@1.3.4` package.json 声明 **LGPL-3.0-or-later**；真实 decoder 记录 libvips 8.18.7。二进制分发还需随实际平台产物保留相应第三方许可/通知，不能把整条 native 依赖链统称 Apache-2.0。本次没有重新审计全部平台二进制。
 
 ## 按需语音模型与上游通知
 
-模型与 Sherpaw 代码分别记录许可。以下为当前 [manifest](apps/web/src/ai/localSpeech/manifest.json)及[归档副本](evidence/phase3-local-speech/models-manifest.json)中的实际模型，包含下载 URL、精确字节数、SHA-256 和 licenseUrl；权重不放入仓库 public。
+模型与 Sherpaw 代码分别记录许可。以下为当前 [manifest](apps/web/src/ai/localSpeech/manifest.json)及`归档副本`中的实际模型，包含下载 URL、精确字节数、SHA-256 和 licenseUrl；权重不放入仓库 public。
 
 | 模型 | 固定仓库 / revision | 字节数 | 模型许可 |
 | --- | --- | ---: | --- |
@@ -79,7 +79,7 @@ Sharp JavaScript 包许可不能覆盖全部 native 二进制依赖：本机安�
 | KWS Zipformer zh-en 3M | `moeru-ai/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20` / `1770a4b22db32184c110ac43c601db17cc9c93f8` | 13,076,183 | **Apache-2.0**；模型卡/固定 HF LICENSE，原模型归属 pkufool/k2-fsa release |
 | Silero VAD v5 | `csukuangfj/vad` / `fba88cd2e921609e7675c3aaf51e0b9b295da4bc` | 2,313,101 | **MIT**，不能以 Sherpaw Apache-2.0 替代；SHA `6b99cbfd39246b6706f98ec13c7c50c6b299181f2474fa05cbc8046acc274396` 与原 release 记录一致 |
 
-[Sherpaw 本地核查](docs/sherpaw-poc-plan.md)记录上游根 NOTICE 和 Sherpa-ONNX SHA `917bed95c8e5c7c18aa4d69fea42e9ef8ef0a60e`（Apache-2.0）。分发对应源码/WASM/权重时应保留各自 LICENSE、版权、适用 NOTICE 和固定模型归属；这些记录不是训练语料权利或全部 WASM 第三方依赖的完整审计。文件实际下载/校验及 WASM 运行见 [本地语音证据](evidence/phase3-local-speech/REPORT.md)。
+[Sherpaw 本地核查](docs/sherpaw-poc-plan.md)记录上游根 NOTICE 和 Sherpa-ONNX SHA `917bed95c8e5c7c18aa4d69fea42e9ef8ef0a60e`（Apache-2.0）。分发对应源码/WASM/权重时应保留各自 LICENSE、版权、适用 NOTICE 和固定模型归属；这些记录不是训练语料权利或全部 WASM 第三方依赖的完整审计。文件实际下载/校验及 WASM 运行见 `本地语音证据`。
 
 浏览器 `speechSynthesis` / `localService` 音色来自浏览器/系统，不是上述模型包，也不随本仓库分发；不能由 Sherpaw 许可推导音色许可或离线保证。最新测试静音/TTS 关闭，本地音色尚无实际发声验收。
 
@@ -93,7 +93,7 @@ Sharp JavaScript 包许可不能覆盖全部 native 二进制依赖：本机安�
 
 Open-Meteo 是调用公共 HTTPS API 的数据服务，未安装或复制其 AGPL 服务端源码。既有本地研究记录其 API 数据为 **CC BY 4.0**，公共无 Key 服务仅用于非商业场景；不能把数据许可等同于托管 API 的无限免费商业使用权。天气来自模型当前条件，不伪称现场观测。
 
-地名数据库归属 **GeoNames**；本地许可核查记录 CC BY 归属要求，数据卡保留 Open-Meteo/GeoNames 名称和链接、CC BY 4.0 链接、字段选择及 WMO→图标变换说明。当前 [WeatherCardView](apps/web/src/cards/WeatherCardView.tsx) 已将最简温度/图标整体作为来源链接，并以既有 Radix HoverCard 按需展示 Open-Meteo、GeoNames、CC BY 4.0 和转换说明；默认不添加 footer，归属不再仅存于 sourceData。该组件复用已安装的 `radix-ui`，没有另引一套 UI。上游归属依据及 API 记录见 [data-providers](docs/data-providers.md)、[真实天气证据](evidence/data-providers/open-meteo-live.json)。用户手填数值标记 `user-input`，sources 为空，不伪造外部数据许可/URL。
+地名数据库归属 **GeoNames**；本地许可核查记录 CC BY 归属要求，数据卡保留 Open-Meteo/GeoNames 名称和链接、CC BY 4.0 链接、字段选择及 WMO→图标变换说明。当前 [WeatherCardView](apps/web/src/cards/WeatherCardView.tsx) 已将最简温度/图标整体作为来源链接，并以既有 Radix HoverCard 按需展示 Open-Meteo、GeoNames、CC BY 4.0 和转换说明；默认不添加 footer，归属不再仅存于 sourceData。该组件复用已安装的 `radix-ui`，没有另引一套 UI。上游归属依据及 API 记录见 [data-providers](docs/data-providers.md)、`真实天气证据`。用户手填数值标记 `user-input`，sources 为空，不伪造外部数据许可/URL。
 
 ## 开发工具链
 

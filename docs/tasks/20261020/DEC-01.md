@@ -37,7 +37,7 @@ contrib/decision-evaluation/ 下适配与测试、docs/decisions/ 的评估/接�
 ## 参考
 
 - [参考 1](../../local-decision.md)
-- [参考 2](../../research/jev-harness-assessment.md)
+- `参考 2`
 - [参考 3](../../../scripts/decision-model/portable-benchmark/README.md)
 
 ## 给 AI 的任务指令

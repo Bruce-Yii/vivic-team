@@ -1,42 +1,69 @@
-# VIVIC Team Handoff — Clean Snapshot
+# VIVIC 团队交接说明
 
-> 交付性质：精简、可运行的独立仓库初始基线（干净 Git 初始提交，不继承原仓库历史）
-> 生成时间：2026-11-16
+> 状态：交接收尾中。仓库 `Bruce-Yii/vivic-team`（Private），协作主线 `main`。
 
-## 基线来源
-- Backend / Web 源码基线：服务器真实部署版本对应 commit `069b2dcb27e1cfbf921e4d3d2d5aeae75642d35f`（Docker 镜像 vivic-api 版本）。
-- 全双工研发：`Bruce-Yii/vivic` 分支 `codex/full-duplex-w0`，HEAD `a3e5f434dde94b246ebedae9de61a8a14692baf9`（相对基线 67 commits / 41 files）。
-- 服务器 Web Release 产物：`key-input-placeholder-20261108-1`（详见 `server-web-release/README.md`；产物已按 .gitignore 排除，不作为构建输入）。
+## 1. 基线来源
 
-## 纳入内容
-- `apps/`：web / local-api / android / hosted 全部源码（含全双工功能：fullDuplex、turnTaking、vad、asrGatewayClient、taskProjection、ASR Gateway Server、Streaming TTS/Playback Ledger）。
-- `packages/`：contracts（含 asrTransport）/ card-runtime / 共享契约。
-- `contrib/`、`deploy/backend`、`deploy/decision`：运行与部署依赖。
-- `.github/workflows/ci.yml`：CI 配置（checks: contracts:check / typecheck / lint / test）。
-- `docs/`：产品与 MOSS-Live 架构约束（不含历史 archive/research/updates）。
-- 必要配置：package.json / pnpm-lock.yaml / pnpm-workspace.yaml / .env.example / AGENTS.md 等。
+| 项目 | 值 |
+| --- | --- |
+| 服务器真实后端版本 | `069b2dcb27e1cfbf921e4d3d2d5aeae75642d35f`（Docker 镜像 `vivic-api:069b2dc…`） |
+| 服务器真实 Web release | `key-input-placeholder-20261108-1`（2026-11-08 发布，产物未纳入 Git） |
+| 全双工研发分支 | `Bruce-Yii/vivic` → `codex/full-duplex-w0` |
+| 全双工分支 HEAD | `a3e5f434dde94b246ebedae9de61a8a14692baf9` |
+| 相对服务器后端基线 | ahead 67 commits / 41 files |
+| 本仓库初始快照 | `5806af499d094bc9a59971da23552afc76e2b7e8`（root commit，无历史） |
 
-## 排除内容
-- archive/、outputs/、work/ 临时脚本、deploy/online-patches | manifests | online-snapshot、docs/archive | research | postmortems | updates | superpowers、evals/、training/、.codex/、空的 src/ tests/。
-- 服务器 Web Release 产物（845MB）不进 git，单独存档于 server-web-release/，按需从服务器重新获取。
+说明：服务器后端 `069b2dc` 是全双工分支的祖先，两者**没有分叉**；本仓库直接以全双工分支为源码基线，不需要合并另一条 `codex/live-backend-20261103`（该分支相对 `069b2dc` 仅多 3 个部署/文档提交，无代码差异）。
 
-## 已验证（干净环境，node 24.16 / pnpm 12.11.2）
-- pnpm install --frozen-lockfile：✅ 791 包
-- pnpm --filter @vivic/web exec vite build：✅ 2.28s（产品本体可打包）
-- pnpm --filter @vivic/local-api typecheck：✅ 0 错误
-- backend 启动 + /healthz：✅ {"ok":true,"service":"vivic-local-api"}
-- ASR Gateway 启动（:8799）：✅ ws://127.0.0.1:8799/asr
-- 单元测试：web turnTaking+speechStreaming 11 passed；local-api asr-gateway 13 passed
-- E2E：fullDuplex.spec.ts 1 passed（fake media + routeWebSocket mock）
+## 2. 纳入范围
 
-## 已知限制（如实标注，不伪造）
-1. `pnpm build` 的 `tsc -b` 阶段被 4 个既有 stale 测试类型错误阻断（SettingsExperience.test.tsx 的 local prop、SpaceEditing.test.tsx 的 CanvasManager/onBeforeClear），原仓库即有，与全双工无关；产品本体用 vite build 可直接打包。
-2. `pnpm contracts:check` 失败：`Vivic_Kimi_Handoff_v0.6/contracts/*.schema.json` 缺失，原仓库同样缺失（未跟踪），既有问题。
-3. Web 源码无法 100% 重建服务器 release：`sourceBuildReproducible:false`，缺 card-packages TSX/authoring generator（详见 server-web-release/README.md）。
-4. ASR 为 Mock Provider（Gateway 默认 MockAsrProvider），无真实 StepFun/离线适配；意图为规则正则；TaskProjection 未消费真实 HostedTask receipt/version。
-5. P3 产品行为闭环未通过 GPT 侧独立验收（YU-405 保持 In Progress）；本报告仅为代码范围交接，不代表功能验收通过。
+- `apps/web`、`apps/local-api`、`apps/android`、`contrib/mobile-console`、`packages/*` 全部源码与依赖。
+- 全双工功能：`fullDuplex.ts`、`turnTaking.ts`、`vad.ts`、`asrGatewayClient.ts`、`taskProjection.ts`、`asrGateway*.ts`、`packages/contracts/src/asrTransport.ts`。
+- 工程配置：`package.json`、`pnpm-lock.yaml`、`pnpm-workspace.yaml`、`.github/workflows/ci.yml`、`deploy/backend`、`deploy/decision`、`deploy/release`。
+- 文档：`docs/` 下的产品、架构、决策与验证记录（不含历史 archive / research / updates / postmortems）。
 
-## 启动
-pnpm install
-pnpm dev:web                                    # 或 pnpm dev 同时起 web(5175)+api(8787)
-pnpm --filter @vivic/local-api exec tsx src/asrGatewayServer.ts   # ASR Gateway :8799
+## 3. 排除范围
+
+`archive/`、`outputs/`、`work/` 临时脚本、`evals/`、`training/`、`.codex/`、`deploy/online-patches|manifests|online-snapshot`、`docs/{archive,research,postmortems,updates,superpowers}`、`tooling/reports/` 历史部署报告。
+
+服务器 Web release 产物（约 845MB）**不纳入 Git**，见第 6 节。
+
+## 4. 已验证（本地干净环境，node 24.16 / pnpm 12.11.2）
+
+| 项 | 结果 |
+| --- | --- |
+| `pnpm install --frozen-lockfile` | ✅ 791 包 |
+| `pnpm --filter @vivic/web exec vite build` | ✅ 可打包 |
+| `pnpm --filter @vivic/local-api typecheck` | ✅ 0 错误 |
+| 后端启动 + `/healthz` | ✅ `{"ok":true,"service":"vivic-local-api"}` |
+| ASR Gateway 启动 | ✅ `ws://127.0.0.1:8799/asr` |
+| 单元测试（定向） | ✅ web 11 / local-api 13 passed |
+| E2E `fullDuplex.spec.ts` | ✅ 1 passed（fake media + WS mock） |
+| `pnpm contracts:check` | ✅（修复分支内，`fix/handoff-gates`） |
+
+## 5. 已知问题（如实标注，不伪造）
+
+1. **GitHub Actions 无法执行**：账号私有仓库 Actions 额度耗尽，job 在分配 runner 前即失败（`runner=""`、`steps=0`、3–7 秒）。最后一次成功 run 为 2026-11-15 09:17 UTC。这与代码质量无关，恢复额度或改用自托管 runner 后才能取得 CI 证据。
+2. **`pnpm build` 被陈旧测试阻断**：`tsc -b` 阶段有 2 个测试文件与当前组件 API 不匹配（`SettingsExperience.test.tsx` 的 `local` prop、`SpaceEditing.test.tsx` 的 `CanvasManager`/`onBeforeClear`）。产品本体 `vite build` 正常。
+3. **`pnpm test` 有失败用例**：web / local-api / mobile-console 各一批，均为原仓库既有。
+4. **全双工未通过产品验收**：ASR 为 Mock、意图为规则、TaskProjection 未接真实 HostedTask；P3（YU-405）保持未通过。
+5. **Web 源码无法 100% 重建服务器 release**：服务器元数据标记 `sourceBuildReproducible: false`，缺 card-packages authoring generator。
+
+## 6. 服务器 Web release 产物
+
+- 产物为生成物，不是源码，**不纳入 Git**。
+- 如需核对线上表现，应从服务器 `releases/key-input-placeholder-20261108-1/web` 获取；该 release 内存在指向 `login-panel-20261031-2` 的符号链接，其中部分目标已失效，属服务器当前真实状态。
+- 队友开发请以本仓库可构建源码为准，不要依赖该产物。
+
+## 7. 接手步骤
+
+```bash
+git clone https://github.com/Bruce-Yii/vivic-team.git
+cd vivic-team
+pnpm install --frozen-lockfile
+pnpm dev:web
+pnpm --filter @vivic/local-api start
+pnpm --filter @vivic/local-api exec tsx src/asrGatewayServer.ts
+```
+
+打开 `http://127.0.0.1:5175/`，点聊天头部 `fd` 按钮可看到全双工开关与状态条（当前为 Mock ASR）。

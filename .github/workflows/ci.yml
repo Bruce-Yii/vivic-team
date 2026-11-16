@@ -18,21 +18,24 @@ jobs:
   checks:
     name: Checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Install Node, pnpm and locked dependencies
-        uses: pnpm/setup@v3
+      - uses: pnpm/action-setup@v4
         with:
-          runtime: node@24.21.0
-          require-lockfile: true
-          cache: true
+          version: 12.11.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       - name: Check generated contracts
         run: pnpm contracts:check
       - name: Typecheck
@@ -47,17 +50,20 @@ jobs:
   browser-smoke:
     name: Browser smoke
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Install Node, pnpm and locked dependencies
-        uses: pnpm/setup@v3
+      - uses: pnpm/action-setup@v4
         with:
-          runtime: node@24.21.0
-          require-lockfile: true
-          cache: true
+          version: 12.11.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       - name: Install Chromium
         run: pnpm --filter @vivic/web exec playwright install --with-deps chromium
       - name: Landing and persisted dual-window smoke

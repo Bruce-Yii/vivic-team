@@ -9,7 +9,7 @@
 | 飞猪卡片 | [开发契约](../CARD_DEVELOPMENT.md)、[单卡表](../cards/CARD_SPEC_TEMPLATE.md)、[Skill](../../.agents/skills/vivic-card-development/SKILL.md)、[飞猪任务](../tasks/fliggy-travel-cards.md) | 规则/运行样例已有；首个场景的真实工具/字段、连接权限还需核对 |
 | 旅游视图参考 | `apps/web/src/cards/scene/views/ComparisonCardView.tsx`、`WeeklyScheduleCardView.tsx`、`SceneCardShell.tsx`、`sceneCards.css`、`fixtures.ts` | 可复用布局/主题/组件，实际数据不自动适配 |
 | 新用户/设置 HTML | [Hark 适配说明](../references/hark-for-vivic.md)、当前 `ControlApp`、`BackgroundSettings`、`LocalDecisionSettings`；会议范围见 [核对表](MEETING_ALIGNMENT.md) | 聊天/卡片风格研究已有；完整 Hark 设置/引导样例仍缺，不能编造原站行为 |
-| 决策模型 | [本地决策现状](../local-decision.md)、[JevHarness 评估](../research/jev-harness-assessment.md)、[便携评测包](../../scripts/decision-model/portable-benchmark/README.md)、`apps/local-api/src/decision/` | 现有代码与283条合成评测已有；马泽瑜新结果/分支、xlz测试结果尚需交接 |
+| 决策模型 | [本地决策现状](../local-decision.md)、`JevHarness 评估`、[便携评测包](../../scripts/decision-model/portable-benchmark/README.md)、`apps/local-api/src/decision/` | 现有代码与283条合成评测已有；马泽瑜新结果/分支、xlz测试结果尚需交接 |
 | 本地启动器 | `scripts/dev.mjs`、`apps/local-api/src/config.ts`、`decision/manager.ts`、[语音职责](../provider-voice-architecture.md)、[本地语音](../local-speech.md) | 开发启动与本地模型入口已有；面向用户的可选模型服务启动器仍需定义，不把二者混为一物 |
 | 包宿主/试跑 | [包设计](../CARD_EXTENSION_DESIGN.md)、[Test Space](../CARD_TEST_SPACE.md)、`packages/contracts`、`cards/scene/cardContext.ts` | 设计草案已有，运行协议/导入安装未完成 |
 

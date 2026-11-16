@@ -1,6 +1,6 @@
 # 办公与个人计划卡片
 
-2026-10-22。基于 Vivic `8655a524f618d8a3d5fa0280cb1e6f87eeaf0c51` 的声明式包宿主扩展；不新增 cardType、不执行包代码。TODAY 参考和独立实现的边界见 [迁移映射](../research/today-office-planner-mapping.md)。
+2026-10-22。基于 Vivic `8655a524f618d8a3d5fa0280cb1e6f87eeaf0c51` 的声明式包宿主扩展；不新增 cardType、不执行包代码。TODAY 参考和独立实现的边界见 `迁移映射`。
 
 ## 卡片范围与入口
 

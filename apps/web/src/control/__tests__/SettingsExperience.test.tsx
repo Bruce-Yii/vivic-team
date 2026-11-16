@@ -14,9 +14,10 @@ function StatefulPanel() {
 }
 const render = (hidden = false, suspended = false) => root.render(<OnlineWorkspaceSuspended.Provider value={suspended}>
   <SettingsExperience hidden={hidden} onBack={back} notice={null}
-    local={<StatefulPanel />} connections={<input aria-label="TEST key draft" defaultValue="" />}
+    connections={<input aria-label="TEST key draft" defaultValue="" />}
+    services={<StatefulPanel />}
     appearance={<p>背景</p>} voice={<p>语音</p>} notifications={<p>通知</p>}
-    mobile={<p>配对</p>} data={<p>备份</p>} permissions={<p>位置</p>} />
+    reminders={<p>提醒</p>} mobile={<p>配对</p>} data={<p>备份</p>} permissions={<p>位置</p>} />
 </OnlineWorkspaceSuspended.Provider>);
 const nav = (id: string) => container.querySelector<HTMLElement>('[data-settings-nav="' + id + '"]')!;
 const group = (id: string) => container.querySelector<HTMLElement>('[data-settings-group="' + id + '"]')!;

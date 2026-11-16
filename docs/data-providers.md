@@ -1,6 +1,6 @@
 # Data adapters: weather and explicit numeric data
 
-> Mainline integration update (2026-10-15): weather and numeric adapters are wired into the real intent pipeline and passed the live browser flow. Open-Meteo weather displays only temperature/icon by default; the weather itself links to licensing, with Open-Meteo/GeoNames/CC BY 4.0 and transformation attribution in the Radix hover detail. Earlier module-only scope and pending-mainline notes below are historical. See [final integration report](../evidence/phase3-final/REPORT.md).
+> Mainline integration update (2026-10-15): weather and numeric adapters are wired into the real intent pipeline and passed the live browser flow. Open-Meteo weather displays only temperature/icon by default; the weather itself links to licensing, with Open-Meteo/GeoNames/CC BY 4.0 and transformation attribution in the Radix hover detail. Earlier module-only scope and pending-mainline notes below are historical. See `final integration report`.
 
 Implementation lives entirely in `apps/local-api/src/data/`. This module does not mount HTTP routes, change the planner, load credentials, call an LLM, start a server, or provide speech. The mainline owns integration.
 

@@ -1,6 +1,6 @@
 # Vivic 手机控制台（MOB-01）
 
-关联 [Issue #12](https://github.com/ECdison6227/vivic-canvas/issues/12)。2026-10-22 用户明确授权正式接线与本人服务器中继，维护者集成分支已连接真实 owner、文字执行、保存确认和 Display；[本轮更新](../../docs/updates/2026-10-22-local-runtime-mobile.md)与[验收](../../docs/verification/local-runtime-mobile-20261022.md)为最新状态。PR #14 原 Draft 状态与独立 DEMO 保留，未自动合并；下文 DEMO 测试仍不能冒充实体手机验收。
+关联 [Issue #12](https://github.com/ECdison6227/vivic-canvas/issues/12)。2026-10-22 用户明确授权正式接线与本人服务器中继，维护者集成分支已连接真实 owner、文字执行、保存确认和 Display；`本轮更新`与[验收](../../docs/verification/local-runtime-mobile-20261022.md)为最新状态。PR #14 原 Draft 状态与独立 DEMO 保留，未自动合并；下文 DEMO 测试仍不能冒充实体手机验收。
 
 2026-10-22 维护者继续修复：请求总期限不被 ACK 延长，未知结果不因迟到进度变成处理中；重连需新 owner 快照，撤销后旧回调失效。中继限制非法帧频率、32 KiB 单帧和 128 KiB 待发缓冲；大摘要按字节裁剪并保留当前画布。详细复现和检查见 [验证记录](../../docs/verification/mobile-console.md)。
 

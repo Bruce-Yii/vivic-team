@@ -1,31 +1,74 @@
-## 2026-11-14 当前主线：MOSS-Live 架构对齐的实时全双工
+# 从这里开始（VIVIC 团队协作仓库）
 
-当前全双工研发仓库为 Bruce-Yii/vivic，开发分支 codex/full-duplex-w0；最新 SHA 与代码基线见当前交接。开工先读 [实时交互架构约束：MOSS-Live 对齐](docs/moss-live-full-duplex-architecture-constraints.md)。MOSS-Live 的核心是前台实时交互模型 + 协同层 + 后台 Agent，不是 ASR/VAD/TTS 模块堆叠。VIVIC 必须保持前台语义交互、Session/Turn/Playback/Delegation 协调和现有 Agent/Host/Hosted Tasks/Space 的职责分离。不得把分段 WAV、关键词规则、Mock 或孤立 helper 说成全双工闭环；按现有 YU-405 ONE-SHOT 产品级任务包执行，不新建重复 Issue。
+> 本仓库是 VIVIC 的团队协作基线：**服务器真实部署版本 + MOSS-Live 方向的全双工阶段成果**。
+> 仓库：`Bruce-Yii/vivic-team`（Private）。原仓库 `Bruce-Yii/vivic` 保持不动，仅作历史与研发溯源。
 
-# 从这里开始
+## 1. 这个仓库包含什么
 
-2026-10-23 追加：用户已启动手机线上接入、隔离服务器验收、跨平台本地运行三条线。手机新线上链路和StartLux/动态TTS已实现，服务器验证结果与具体限制见 [手机线上接入](docs/updates/2026-10-23-online-mobile.md)、[服务器验收](docs/updates/2026-10-23-online-server.md)、[本地运行](docs/updates/2026-10-23-local-runtime-next.md)。Mac按用户选择先交安装与自动验收，暂不实机；微调为小档开发候选，不自动替换正式模型。仍不正式发布或推送。
+| 部分 | 内容 | 状态 |
+| --- | --- | --- |
+| Web 前端 | `apps/web`（React + Vite + Hark UI） | 可构建、可启动 |
+| 本地后端 | `apps/local-api`（Hono + Hosted Tasks + Space SQLite） | 可启动、typecheck 通过 |
+| 全双工语音 | `apps/web/src/ai/{fullDuplex,turnTaking,vad,asrGatewayClient}.ts` + `apps/local-api/src/asrGateway*.ts` | **阶段成果，未通过产品级验收** |
+| 共享契约 | `packages/contracts`、`packages/card-runtime` | 稳定 |
+| 移动端 | `apps/android`（Java WebView 壳）、`contrib/mobile-console` | 可读，非当前主线 |
 
-当前目标（2026-10-23）：先完善 Vivic 线上端的三步引导与隔离会话 API，交付可部署版本，本轮不发布。启动器/本地模型后续再做，已有成果保留；线上部署入口见 [部署说明](docs/online-deployment.md)。源码主仓库为 `ECdison6227/vivic-canvas`，集成分支为 `main`。
+代码基线：服务器后端 `069b2dc` + 全双工分支 `codex/full-duplex-w0@a3e5f43` 的功能集（67 commits / 41 files 相对基线）。
 
-## 只读与你有关的入口
+## 2. 快速开始
 
-| 你要做什么 | 阅读 |
-| --- | --- |
-| 安装、启动、用 GitHub Desktop 提交 | [贡献指南](CONTRIBUTING.md) |
-| 查看产品与运行地址 | [README](README.md) |
-| 接手任务，使用 AI 编程 | [AGENTS](AGENTS.md) → [当前交接](docs/AGENT_HANDOFF.md) → 自己的任务单 |
-| 确认已有能力与未完成项 | [实施现状](docs/implementation-status.md) |
-| 看分工、范围和交付条件 | [团队任务边界](docs/TEAM_TASKS.md) |
-| 决定后续功能顺序 | [本地路线](docs/LOCAL_ROADMAP.md)，按依赖程度分配 |
-| 查某个模块的实现说明 | [文档目录](docs/README.md) |
+前置：Node 24、pnpm 12.11.2（`corepack enable` 或全局安装）。
 
-## 当前约定
+```bash
+pnpm install --frozen-lockfile
+pnpm dev:web                                     # Web: http://127.0.0.1:5175
+pnpm --filter @vivic/local-api start             # API: http://127.0.0.1:8787
+pnpm --filter @vivic/local-api exec tsx src/asrGatewayServer.ts   # ASR Gateway: ws://127.0.0.1:8799/asr
+```
 
-- 你重点优化核心流程、统筹接口与合并，也可以做新功能；两位伙伴可做 Landing、新卡片和依赖较少的新功能。
-- 伙伴默认通过 fork 提 PR；每张任务单明确代码范围、接口和验收条件。中等依赖先定接口，高依赖由你牵头，避免互相等待。
-- 用户页 `/`，设置 `/control`，展示 `/display`；本机使用 `5175/8787`，隔离浏览器测试使用 `5174/8788`。
-- 模型凭据只在受控本机后端；自动化静音，不触碰个人画布。已有服务无需因切换 Agent 重启。
-- 当前规则看根 [AGENTS.md](AGENTS.md) 和 [Git 约定](docs/GIT_WORKFLOW.md)。历史报告只供查证，不用于重做已完成阶段。
+验证后端存活：`curl http://127.0.0.1:8787/healthz` → `{"ok":true,"service":"vivic-local-api"}`
 
-历史计划、旧交接和旧验收清单已收进 [归档](docs/archive/README.md)。原 v0.6 产品规格、生成契约及示例仍保留在 [archive/handoff-kimi-v0.6/](../archive/handoff-kimi-v0.6/)，其中旧设计须以现有代码和当前约定核对。
+常用命令：
+
+```bash
+pnpm typecheck                                   # 类型检查
+pnpm lint                                        # oxlint
+pnpm --filter @vivic/web exec vite build         # 仅打包 Web（绕过 tsc -b）
+pnpm --filter @vivic/web test turnTaking         # 定向单测
+```
+
+## 3. 当前能力边界（务必先读，不要误判）
+
+**真实能力**
+- 麦克风持续采集（getUserMedia + AudioWorklet）、RMS 能量 VAD
+- TTS 播放与 Playback Ledger（MSE 流式 + playedMs 实际进度）、duck/unduck
+- Web / API / ASR Gateway 三进程可独立启动互通
+- Hosted Tasks / Space 的业务读写链路（沿用既有实现）
+
+**Mock / 规则能力（不得称为已完成真实能力）**
+- **ASR 是 Mock Provider**：Gateway 默认 `MockAsrProvider`，输出「词1词2…」合成文本，没有真实语音识别。真实 StepFun / 离线 Provider 尚未适配。
+- 意图判断是**正则规则**（`turnTaking.ts`），不是上下文语义模型。
+- `taskProjection.ts` 未消费真实 HostedTask 的 status / receipt / version。
+- 浏览器 E2E 使用 fake media device + `routeWebSocket` mock，属链路 smoke，不是真实语音验收。
+
+**已知未通过**
+- P3 全双工产品行为闭环（YU-405）未通过独立验收：连续多轮 ASR、真实插话意图、HostedTask 真实回执均未验证。
+
+**已知既有失败（原仓库同样存在，不是本仓库引入）**
+- `pnpm build` 的 `tsc -b` 阶段被 2 个陈旧测试阻断（`SettingsExperience.test.tsx` 的 `local` prop、`SpaceEditing.test.tsx` 的 `CanvasManager`/`onBeforeClear`）；产品本体用 `vite build` 可正常打包。
+- `pnpm test` 存在失败用例（web / local-api / mobile-console 各一批）。
+- GitHub Actions 当前无法执行：账号私有仓库 Actions 额度耗尽，job 在分配 runner 前即失败（`runner=""`、`steps=0`）。这不是代码失败。
+
+## 4. 阅读顺序
+
+1. 本文件 → 2. `HANDOFF.md`（交接范围与验收状态）→ 3. `AGENTS.md`（协作与边界规则）
+2. 架构约束：`docs/moss-live-full-duplex-architecture-constraints.md`（MOSS-Live 对齐的职责划分）
+3. 设计与决策记录：`docs/decisions/`、`docs/design/`
+4. 历史验证：`docs/verification/`
+
+## 5. 协作约定
+
+- 分支：从 `main` 切任务分支，PR 回 `main`；一个任务一个 PR。
+- 不把 Mock/规则实现写成真实供应商能力；新增能力必须有可复现测试。
+- 不提交凭据、生产数据库或线上配置；`.env*` 默认不入库。
+- 线上部署、生产配置变更需要单独明确授权；本仓库不承担部署职责。
