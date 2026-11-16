@@ -1,0 +1,168 @@
+{
+  "host": "47.108.117.1",
+  "createdAtLocal": "2026-11-05T19:13:43+0800",
+  "files": [
+    {
+      "remote": "/tmp/vivic-frontend-web-full.tgz",
+      "local": "tmp/vivic-frontend-web-full.tgz",
+      "bytes": 662036369,
+      "sha256": "65091bd8ed6e2ba4d3d18618c43c500635f2a91c76280fc816e8cc34c38997a0"
+    },
+    {
+      "remote": "/tmp/vivic-app-full.tgz",
+      "local": "tmp/vivic-app-full.tgz",
+      "bytes": 258907454,
+      "sha256": "e71b4257e26e24aa5a507be0050deb46e7f6a5ebf488b1367a82723090198efe"
+    },
+    {
+      "remote": "/tmp/vivic-frontend-web-h.tgz",
+      "local": "tmp/vivic-frontend-web-h.tgz",
+      "bytes": 255292596,
+      "sha256": "cea68cba011288648b4d3baa44c80e8ad04c5985586f3ab6018cea3651fd7289"
+    },
+    {
+      "remote": "/tmp/vivic-app-h.tgz",
+      "local": "tmp/vivic-app-h.tgz",
+      "bytes": 101817725,
+      "sha256": "e2870f3d6f6fbea1a069e9ea1972fe998e62bb1619fef79533dd0107361137aa"
+    },
+    {
+      "remote": "/tmp/vivic-app.tgz",
+      "local": "tmp/vivic-app.tgz",
+      "bytes": 101813815,
+      "sha256": "9c6ae9b8c960742d600b5b849f68652d8e5d92710a1c57658dec9fad3962463a"
+    },
+    {
+      "remote": "/tmp/vivic-frontend-web.tgz",
+      "local": "tmp/vivic-frontend-web.tgz",
+      "bytes": 22256411,
+      "sha256": "8bea1af74257e57f14bfbe7cfb4520e3fade39407c161170f7767983556ab28c"
+    },
+    {
+      "remote": "/tmp/ppt-20261029T064226Z-mobile-qr.tar.gz",
+      "local": "tmp/ppt-20261029T064226Z-mobile-qr.tar.gz",
+      "bytes": 86880377,
+      "sha256": "ffe9b8762dd6578027e06ffca3c53573271e57b95227784d82dacc88de6f9e46"
+    },
+    {
+      "remote": "/tmp/ppt-20261029T053736Z-stage-share.tar.gz",
+      "local": "tmp/ppt-20261029T053736Z-stage-share.tar.gz",
+      "bytes": 22121325,
+      "sha256": "84493ae683d2b0ee8690f3dbbb0283b961c58aadfa9b621ee802c60370a31ddc"
+    },
+    {
+      "remote": "/tmp/frontend-settings-panel.tar",
+      "local": "tmp/frontend-settings-panel.tar",
+      "bytes": 46273536,
+      "sha256": "782f21e6bece8830511b1e14e6b483a5773001c8d2250447b916fbbf80ed6b4b"
+    },
+    {
+      "remote": "/tmp/ff-assets.tgz",
+      "local": "tmp/ff-assets.tgz",
+      "bytes": 12859457,
+      "sha256": "273964fc59f8a0ab8cf9aec94fb3953bcab5984c79bb549f949fc1ace8767d15"
+    },
+    {
+      "remote": "/tmp/claude-ms-base.tgz",
+      "local": "tmp/claude-ms-base.tgz",
+      "bytes": 4427848,
+      "sha256": "25b2b3005e5f8dd748764f7008f98e05ee64cca28a48159e201ad079d5e9a0c9"
+    },
+    {
+      "remote": "/tmp/claude-web-20261101.tgz",
+      "local": "tmp/claude-web-20261101.tgz",
+      "bytes": 4425256,
+      "sha256": "6940b734a09b489fe7660fb514587a5b027d563869585d066e83cea0ff1d178d"
+    },
+    {
+      "remote": "/tmp/vivic-light-default-verification.tar.gz",
+      "local": "tmp/vivic-light-default-verification.tar.gz",
+      "bytes": 329582,
+      "sha256": "a6ae7f65acce0607a720861f02270e91a9ecf9a541b1c0c1daaebe15f609ba2b"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/frontend-before-android-20261031T211822.tar.gz",
+      "local": "backend/frontend-before-android-20261031T211822.tar.gz",
+      "bytes": 228831464,
+      "sha256": "00972e7424b88e9ccaa1514a3b1506cb75a5882370878a524a86253d54ff77f6"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/frontend-before-android-final-20261031T223335.tar.gz",
+      "local": "backend/frontend-before-android-final-20261031T223335.tar.gz",
+      "bytes": 15097004,
+      "sha256": "d7c9fde8449122f526b422e5fcf57f26074bc5490ce93a1a80b1bb7550e28a25"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/frontend-before-card-packages-20261030.zip",
+      "local": "backend/frontend-before-card-packages-20261030.zip",
+      "bytes": 24786943,
+      "sha256": "58d69d7057aea202e8b2953a1e04f515a0db63499726758d65983b32108376f2"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/frontend-card-packages-20261030-1.zip",
+      "local": "backend/frontend-card-packages-20261030-1.zip",
+      "bytes": 26208695,
+      "sha256": "2315e0ebe4ad011aa16601a12ce1fd315b748cadef6daaac32b077428239d887"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/frontend-clarification-guard-20261030-1.zip",
+      "local": "backend/frontend-clarification-guard-20261030-1.zip",
+      "bytes": 26371472,
+      "sha256": "9a4aa8eb879ca386ed925a4425544d6d9c34e1742e196896b0066bc63435e27b"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/frontend-clarification-guard-20261030-2.zip",
+      "local": "backend/frontend-clarification-guard-20261030-2.zip",
+      "bytes": 28453662,
+      "sha256": "edcebce1956a9eb5f9a152b5c421dd2f6c7533423ba58e285d0b7e9813c0094f"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/frontend-display-contrast-20261030-1.zip",
+      "local": "backend/frontend-display-contrast-20261030-1.zip",
+      "bytes": 26200688,
+      "sha256": "26694fe26d94e7e7130dce385791cc4e6349069cc4817e5f38daaaeef8232c0d"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/frontend-voice-v4-20261030-1.zip",
+      "local": "backend/frontend-voice-v4-20261030-1.zip",
+      "bytes": 27588746,
+      "sha256": "fb5a703f0842b4320a93ca93463cddd9c4a5b2b1e7bdcee122a9ac6c57221dd4"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/android-live-ui-20261031.tar.gz",
+      "local": "backend/android-live-ui-20261031.tar.gz",
+      "bytes": 15082104,
+      "sha256": "ecd1cd144a66c42a8d76b18448ee6c41b85e87e2d38e2168e40f5deb66689008"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/android-ui-v2.tar.gz",
+      "local": "backend/android-ui-v2.tar.gz",
+      "bytes": 15096317,
+      "sha256": "222dd62a38c2482c19e7dc21b2412531fefc32248732dda232aee017380131a8"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/android-ui-v3.tar.gz",
+      "local": "backend/android-ui-v3.tar.gz",
+      "bytes": 15096340,
+      "sha256": "9c1f3329a67093e6d56cddeb054793ae416a417ce59250f03a54f1c3288b4feb"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/android-ui-v4.tar.gz",
+      "local": "backend/android-ui-v4.tar.gz",
+      "bytes": 15091443,
+      "sha256": "44ca9864c42f1207d6a1e8dae08e0e6be87bcd29fce16d4fb12837c1e3ee092d"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/card-packages-20261030-1-33df8281362f.zip",
+      "local": "backend/card-packages-20261030-1-33df8281362f.zip",
+      "bytes": 15380697,
+      "sha256": "33df8281362f78818be9f4265fa6828fe9a340d6a7a0e7b6c8bf13352b4aa373"
+    },
+    {
+      "remote": "/opt/vivic-preview-20261025/backend/card-packages-20261030-1-upload.zip",
+      "local": "backend/card-packages-20261030-1-upload.zip",
+      "bytes": 14707537,
+      "sha256": "186e16fb95e459149c3ac9e56ed5bd1349c806a45cc3cc18ff988aec83996cd1"
+    }
+  ]
+}

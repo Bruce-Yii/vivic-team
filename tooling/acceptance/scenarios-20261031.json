@@ -1,0 +1,843 @@
+{
+  "version": "vivic-scenarios-v1-20261031",
+  "generated": "2026-10-31",
+  "purpose": "60 条真实风格验收场景：用于真实模型/浏览器端到端验收，与 work/vivic-routing/evals/decision/dataset.json 的 161 条固定集互补，不替代它。",
+  "not_run": "本文件只造题，未调用任何真实模型、未启动服务、未改源码/Git/服务器。",
+  "basis": [
+    "work/vivic-routing/evals/decision/dataset.json（16 路由、161 题、7 卡画布）",
+    "docs/product-understanding.md、outputs/vivic-product-and-code-analysis.md",
+    "work/lead-recon/sub-product.md（21 scene / 27 CardType / 16 route 口径、能力边界）",
+    "work/multi-card/cases.json（22 条多卡用例）、work/lead-recon/sub-multi-card-design.md",
+    "work/lead-recon/sub-target-ambiguity-policy.md（歧义/缺目标/问法/不猜边界）",
+    "packages/contracts/src/{routes.ts,cardRecord.ts,scenes.ts}、apps/local-api/src/cards/index.ts"
+  ],
+  "canvas": {
+    "ref": "work/vivic-routing/evals/decision/dataset.json#canvas",
+    "focused": "note_meeting",
+    "cards": [
+      {
+        "id": "todo_week",
+        "type": "TodoCard",
+        "title": "本周待办",
+        "items": [
+          "交周报",
+          "买牛奶",
+          "预约牙医"
+        ]
+      },
+      {
+        "id": "todo_shop",
+        "type": "TodoCard",
+        "title": "购物清单",
+        "items": [
+          "鸡蛋",
+          "洗衣液"
+        ]
+      },
+      {
+        "id": "note_meeting",
+        "type": "NoteCard",
+        "title": "会议记录",
+        "text": "周三和设计讨论首页改版"
+      },
+      {
+        "id": "note_book",
+        "type": "NoteCard",
+        "title": "读书笔记",
+        "text": "《原子习惯》第三章摘录"
+      },
+      {
+        "id": "cd_water",
+        "type": "CountdownCard",
+        "title": "喝水提醒",
+        "remaining": "18分钟"
+      },
+      {
+        "id": "weather_sh",
+        "type": "WeatherCard",
+        "title": "上海天气"
+      },
+      {
+        "id": "answer_google",
+        "type": "AnswerCard",
+        "title": "Google 公司介绍",
+        "points": [
+          "1998年成立",
+          "总部在山景城",
+          "核心业务是搜索和广告"
+        ]
+      }
+    ],
+    "note": "所有用例默认在此 7 卡画布上执行，focusHistory 初始为 note_meeting。answer_google 在 dataset 中记作 AnswerCard，当前 27 种 renderer 里对应 NewsCard；引用该卡时只按标题/位置指代，不依赖卡型名。"
+  },
+  "conventions": {
+    "expected_route": "16 路由之一，取值见 packages/contracts/src/routes.ts。多子句用例填首个子句的主路由，完整顺序见 routes。",
+    "routes": "仅多子句用例出现，按句子顺序列出每个子句应有的路由。",
+    "expected_card_types": "期望新增的卡片类型（27 种 renderer 名）。空数组 = 期望不新增卡（澄清、拒绝、纯视图操作、纯闲聊）。",
+    "card_optional": "true = 允许不出卡（仅字幕/口头回答），出卡时类型须落在 expected_card_types。",
+    "expected_target": "已有卡目标，取值是 canvas.cards[].id；仅操作类用例出现。",
+    "multi_clause": "true = 一句话含 2–3 个独立意图（splitClauses 会切出多段）。条件句、否定句、单句多事项都是 false。",
+    "source": "只取三个值：dataset 改写 / 产品文档 / 合成。source_ref 给可复核出处。",
+    "note_on_clarify": "notes 里写「预期澄清」的用例，澄清且零卡是正确结果，不是失败；判据见 README §5。"
+  },
+  "counts": {
+    "total": 60,
+    "single_intent": 40,
+    "multi_clause": 15,
+    "boundary": 5
+  },
+  "scenarios": [
+    {
+      "id": "sc-01",
+      "text": "记一下，房东说明年房租涨到 3600",
+      "expected_route": "note",
+      "expected_card_types": [
+        "NoteCard"
+      ],
+      "multi_clause": false,
+      "notes": "最基础的便笺。金额与人（房东）原样保留，不得改写成建议或待办。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#note-01（便笺），文本不在 161 集内"
+    },
+    {
+      "id": "sc-02",
+      "text": "把新家的门锁密码存一下，是 886622",
+      "expected_route": "note",
+      "expected_card_types": [
+        "NoteCard"
+      ],
+      "multi_clause": false,
+      "notes": "含纯数字密码。要点：不得补前导零或改位，密码原样进卡。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#note-02（记密码）"
+    },
+    {
+      "id": "sc-03",
+      "text": "我突然想到一个点子，做个给猫用的日历 app，先帮我记着",
+      "expected_route": "note",
+      "expected_card_types": [
+        "NoteCard"
+      ],
+      "multi_clause": false,
+      "notes": "口语化便笺，含「先记着」这种弱指令。不应被理解成 generate（不是让系统做方案）。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#note-05"
+    },
+    {
+      "id": "sc-04",
+      "text": "便签记一下，车停在地库 B2 层 34 号",
+      "expected_route": "note",
+      "expected_card_types": [
+        "NoteCard"
+      ],
+      "multi_clause": false,
+      "notes": "单一事实便笺，含编号。B2/34 不得被丢。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#note-09"
+    },
+    {
+      "id": "sc-05",
+      "text": "明天上午先把合同发给王经理，加个待办",
+      "expected_route": "todo",
+      "expected_card_types": [
+        "TodoCard"
+      ],
+      "multi_clause": false,
+      "notes": "单条待办 + 时间词「明天上午」。时间可作为标题一部分，不要求单独字段。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#todo-01（单条待办）"
+    },
+    {
+      "id": "sc-06",
+      "text": "这周末要干的三件事：换轮胎、剪头发、还书",
+      "expected_route": "todo",
+      "expected_card_types": [
+        "TodoCard"
+      ],
+      "multi_clause": false,
+      "notes": "一张卡三条，顿号分隔且声明了数量「三件事」。不得切成三张卡；三条都要在，顺序保持。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#todo-02（一张卡多条）"
+    },
+    {
+      "id": "sc-07",
+      "text": "新建一个任务清单，准备搬家",
+      "expected_route": "todo",
+      "expected_card_types": [
+        "TodoCard"
+      ],
+      "multi_clause": false,
+      "notes": "标题型清单，没有具体条目。允许系统只给标题或给占位条目，但必须是一张 TodoCard。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#todo-03"
+    },
+    {
+      "id": "sc-08",
+      "text": "添加待办：喝水、交周报",
+      "expected_route": "todo",
+      "expected_card_types": [
+        "TodoCard"
+      ],
+      "multi_clause": false,
+      "notes": "两张卡容易被误判成两句，这里是单卡两条。注意与 sc-43（分号多卡）区分。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#todo-05 家族 / multi-08"
+    },
+    {
+      "id": "sc-09",
+      "text": "给我掐个 45 分钟的表",
+      "expected_route": "countdown",
+      "expected_card_types": [
+        "CountdownCard"
+      ],
+      "multi_clause": false,
+      "notes": "纯计时器口语说法（「掐个表」），无事项。卡面只显示数字，不进提醒列表。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#countdown-01（纯计时）"
+    },
+    {
+      "id": "sc-10",
+      "text": "二十分钟以后提醒我把汤关火",
+      "expected_route": "countdown",
+      "expected_card_types": [
+        "CountdownCard"
+      ],
+      "multi_clause": false,
+      "notes": "带事项的提醒（reminderText=把汤关火），不是纯计时。数值 20 分钟不得改。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#countdown-05（N 分钟后提醒我 X）"
+    },
+    {
+      "id": "sc-11",
+      "text": "帮我数着还有多少天到我生日，明年三月十五号",
+      "expected_route": "countdown",
+      "expected_card_types": [
+        "CountdownCard"
+      ],
+      "multi_clause": false,
+      "notes": "日期倒计时（event 模式），不是分钟计时器。日期只能取原话（明年 3 月 15 日），不得自己换一个；不得改成「知识问答」去口头算天数。",
+      "source": "产品文档",
+      "source_ref": "scenes.ts#countdown（重要日期倒计时）、cardRecord.ts CountdownEventSchema（注释举例生日）、scenes/index.ts isLongRangeDateCountdown"
+    },
+    {
+      "id": "sc-12",
+      "text": "五分钟后提醒我喝水和吃药",
+      "expected_route": "countdown",
+      "expected_card_types": [
+        "CountdownCard"
+      ],
+      "multi_clause": false,
+      "notes": "单子句、多事项，用「和」连接。两种合格结果：两条提醒，或一条含「喝水和吃药」的提醒；不允许只剩一件事（已知缺口：reminderCoverageIssue 对「和」无效）。",
+      "source": "产品文档",
+      "source_ref": "work/lead-recon/sub-multi-card-design.md §3.4、mc-13"
+    },
+    {
+      "id": "sc-13",
+      "text": "帮我讲讲宁德时代是做什么的",
+      "expected_route": "answer",
+      "expected_card_types": [
+        "NewsCard"
+      ],
+      "multi_clause": false,
+      "notes": "回答契约产出 NewsCard（answer.ts cardType=NewsCard）。要点：不得编造市占率、营收等原话里没有的数字。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#answer-01（介绍一家公司）、cards/answer.ts"
+    },
+    {
+      "id": "sc-14",
+      "text": "这句话是什么意思：明天把方案发我",
+      "expected_route": "answer",
+      "expected_card_types": [
+        "NewsCard"
+      ],
+      "multi_clause": false,
+      "notes": "解释型问答，被解释的命令不得执行（不能真的建「明天把方案发我」的待办）。允许只回字幕。",
+      "card_optional": true,
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#answer-06"
+    },
+    {
+      "id": "sc-15",
+      "text": "这张谷歌的卡片讲了什么",
+      "expected_route": "answer",
+      "expected_card_types": [
+        "NewsCard"
+      ],
+      "multi_clause": false,
+      "notes": "关于已有卡的解释，指代依赖焦点或标题命中（answer_google）。不得重建成一张新卡覆盖原卡；允许只回字幕。",
+      "card_optional": true,
+      "expected_target": "answer_google",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#answer-12（about_card）"
+    },
+    {
+      "id": "sc-16",
+      "text": "帮我做一个下周的健身计划",
+      "expected_route": "generate",
+      "expected_card_types": [
+        "WeeklyScheduleCard"
+      ],
+      "multi_clause": false,
+      "notes": "周计划场景卡（weekly_schedule）。只有「上午/下午」这类时段词时不得编造具体钟点。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#generate-07、scenes.ts#weekly_schedule"
+    },
+    {
+      "id": "sc-17",
+      "text": "把这几个数做成柱状图：周一 12，周二 8，周三 19",
+      "expected_route": "generate",
+      "expected_card_types": [
+        "ChartCard"
+      ],
+      "multi_clause": false,
+      "notes": "用户已给数据，只做图。数值必须与原文一致，不得补造第四天或改成折线图。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#generate-09（给定数字画柱状图）"
+    },
+    {
+      "id": "sc-18",
+      "text": "做一个表格对比 iPhone 和华为的参数，iPhone 6.1 寸，华为 6.7 寸",
+      "expected_route": "generate",
+      "expected_card_types": [
+        "TableCard",
+        "ComparisonCard"
+      ],
+      "multi_clause": false,
+      "notes": "只允许用用户给的两组数据，不得补相机/电池等未提供的参数。TableCard 与 ComparisonCard 任一合格。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#generate-04"
+    },
+    {
+      "id": "sc-19",
+      "text": "最近有什么 AI 方面的大新闻",
+      "expected_route": "search",
+      "expected_card_types": [
+        "SearchResultCard"
+      ],
+      "card_optional": true,
+      "multi_clause": false,
+      "notes": "实时资讯，必须联网。产品变化（2026-11-05 查询工具只读）：search 只回灌已验证的检索事实，是否展示、如何回答由模型决定——只回答（零卡）、只建检索结果卡、或两者同批都合格；出卡时必须带来源，且不得凭记忆编新闻。旧期望「必须出 SearchResultCard」已废弃。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#search-01（科技新闻）"
+    },
+    {
+      "id": "sc-20",
+      "text": "查一下现在黄金多少钱一克",
+      "expected_route": "search",
+      "expected_card_types": [
+        "SearchResultCard"
+      ],
+      "card_optional": true,
+      "multi_clause": false,
+      "notes": "实时价格。产品变化（2026-11-05 查询工具只读）：search 只回灌事实，回答和/或结果卡由模型决定，零卡不判失败。任何数字必须能追到工具回灌的来源；无来源时应说查不到而不是给估值。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#search-02"
+    },
+    {
+      "id": "sc-21",
+      "text": "明天南京要穿外套吗",
+      "expected_route": "search",
+      "expected_card_types": [
+        "WeatherCard"
+      ],
+      "card_optional": true,
+      "multi_clause": false,
+      "notes": "天气意图藏在生活化问法里，走 weather（城市=南京，明天）回灌已验证的天气事实。产品变化（2026-11-05 查询工具只读）：模型可以直接回答（零卡，口语里含温度与穿外套建议）或建 WeatherCard，或两者同批；旧期望「必须出 WeatherCard、只念已显示」已废弃。出卡时城市必须是南京。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#weather-04（明天下雨要不要带伞）"
+    },
+    {
+      "id": "sc-22",
+      "text": "在吗，忙不忙",
+      "expected_route": "chat",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "纯打招呼，不出卡，只回短字幕。任何建卡都算多做。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#chat-01（打招呼）"
+    },
+    {
+      "id": "sc-23",
+      "text": "我今天好累啊",
+      "expected_route": "chat",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "情绪表达。容易误判成 note 或 generate，正确是 chat、零卡。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#chat-05"
+    },
+    {
+      "id": "sc-24",
+      "text": "帮我叫个滴滴去机场",
+      "expected_route": "unsupported",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "叫车属于外部写操作（下单类），明确不做。不得降级成「记个便签：去机场」就说已完成。",
+      "source": "合成",
+      "source_ref": "新造口语句，能力边界同 dataset#unsupported-01（下单）/routes.ts unsupported 定义"
+    },
+    {
+      "id": "sc-25",
+      "text": "给张三打个电话",
+      "expected_route": "unsupported",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "打电话超出产品边界。正确：清楚说明做不到，不伪造已拨出。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#unsupported-02"
+    },
+    {
+      "id": "sc-26",
+      "text": "显示全部卡片",
+      "expected_route": "overview",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "纯视图操作（canvas.fit），零新卡。最容易优化成 0 次模型调用的一类：不得因为走了主模型就判失败，但必须不建卡。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#overview-01"
+    },
+    {
+      "id": "sc-27",
+      "text": "不用放大了，还原吧",
+      "expected_route": "restore",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "否定式恢复。含「不用放大」不得被判成 focus 或 edit。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#restore-04（negation）"
+    },
+    {
+      "id": "sc-28",
+      "text": "放大看看读书笔记",
+      "expected_route": "focus",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "标题唯一命中，不应追问「哪一张」。预期目标 note_book。",
+      "expected_target": "note_book",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#focus-02"
+    },
+    {
+      "id": "sc-29",
+      "text": "别删，先聚焦它",
+      "expected_route": "focus",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "否定 + 指代。只允许聚焦，「删」不得执行。历史问题：目标已解析正确却仍追问「哪张卡」（误问）。预期目标 note_meeting。",
+      "expected_target": "note_meeting",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#focus-08 家族 / multi-09"
+    },
+    {
+      "id": "sc-30",
+      "text": "高亮一下买牛奶那条",
+      "expected_route": "highlight",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "条目级高亮。目标卡 todo_week，条目「买牛奶」。不得高亮整张卡以外的东西。",
+      "expected_target": "todo_week",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#highlight-01"
+    },
+    {
+      "id": "sc-31",
+      "text": "高亮第一条",
+      "expected_route": "highlight",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "歧义：焦点卡是纯文字便笺（无条目），「第一条」到底指哪张卡的第几条。正确是追问，且问句要说明是「哪张卡的第几条」，候选应为有条目的卡；直接高亮会议记录=失败。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#highlight-07、sub-target-ambiguity-policy.md T3"
+    },
+    {
+      "id": "sc-32",
+      "text": "预约牙医那条我弄完了，帮我打勾",
+      "expected_route": "edit",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "勾选完成。目标 todo_week 的第 3 条（预约牙医）；只改这一条，不动交周报/买牛奶。",
+      "expected_target": "todo_week",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#edit-01（勾掉某条）"
+    },
+    {
+      "id": "sc-33",
+      "text": "购物清单里加上酱油",
+      "expected_route": "edit",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "向已有卡追加条目。目标是 todo_shop（不是本周待办），原有两条必须保留。",
+      "expected_target": "todo_shop",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#edit-02"
+    },
+    {
+      "id": "sc-34",
+      "text": "暂停喝水倒计时",
+      "expected_route": "edit",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "暂停已有计时器（countdown.pause 宿主操作），不是新建倒计时。目标 cd_water。",
+      "expected_target": "cd_water",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#edit-08"
+    },
+    {
+      "id": "sc-35",
+      "text": "删除读书笔记",
+      "expected_route": "delete",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "标题唯一命中，仍需二次确认（删除类永不因猜中直接执行）。目标 note_book。",
+      "expected_target": "note_book",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#delete-01"
+    },
+    {
+      "id": "sc-36",
+      "text": "这张卡没用了，扔掉",
+      "expected_route": "delete",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "指代删除，目标 note_meeting（当前焦点）。历史问题：因句中有逗号走了主模型，把 7 张卡全列出来问「删哪张」（误问）。正确：直接进删除确认。",
+      "expected_target": "note_meeting",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#delete-05"
+    },
+    {
+      "id": "sc-37",
+      "text": "撤销",
+      "expected_route": "undo",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "最简撤销，应 0 次模型调用直达。零新卡、零正文变更以外的影响。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#undo-01"
+    },
+    {
+      "id": "sc-38",
+      "text": "哎呀删错了，恢复回来",
+      "expected_route": "undo",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "口语化撤销，情绪词在前。容易被误判成 delete 或 chat。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#undo-05"
+    },
+    {
+      "id": "sc-39",
+      "text": "把上海天气那张卡拖到左上角",
+      "expected_route": "arrange",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "移动（card.move）+ 位置词「左上角」。只改坐标，不改内容、不解固定；不得把卡传送到用户页。",
+      "expected_target": "weather_sh",
+      "source": "合成",
+      "source_ref": "新造口语句，能力同 dataset#arrange-01（把天气卡移到左边）"
+    },
+    {
+      "id": "sc-40",
+      "text": "读书笔记挪到购物清单下面",
+      "expected_route": "arrange",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "双卡关系：目标 note_book、参照 todo_shop。两个目标都要定对；只定出一个就执行算失败。",
+      "expected_target": "note_book",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#arrange-04、sub-target-ambiguity-policy.md §2.6"
+    },
+    {
+      "id": "sc-41",
+      "text": "帮我记个便签明天交周报，再设个 50 分钟倒计时",
+      "expected_route": "note",
+      "routes": [
+        "note",
+        "countdown"
+      ],
+      "expected_card_types": [
+        "NoteCard",
+        "CountdownCard"
+      ],
+      "multi_clause": true,
+      "notes": "纯规则双卡经典句：两个子句都能被唯一契约解析，理想 0 次模型调用。两张卡都要在，且只产生一次 canvas 适配。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#multi-01"
+    },
+    {
+      "id": "sc-42",
+      "text": "记个便笺明天交周报，再过五分钟叫我休息",
+      "expected_route": "note",
+      "routes": [
+        "note",
+        "countdown"
+      ],
+      "expected_card_types": [
+        "NoteCard",
+        "CountdownCard"
+      ],
+      "multi_clause": true,
+      "notes": "规则 + 模型混合：「过五分钟叫我休息」是口语时长，通常需要一次规划。判分只看结果（便笺 + 300 秒提醒「休息」），不看调用次数。",
+      "source": "产品文档",
+      "source_ref": "sub-multi-card-design.md §1.3（规则+模型混合）、work/multi-card/cases.json#mc-03"
+    },
+    {
+      "id": "sc-43",
+      "text": "加待办：买牛奶；记个便笺明天交周报",
+      "expected_route": "todo",
+      "routes": [
+        "todo",
+        "note"
+      ],
+      "expected_card_types": [
+        "TodoCard",
+        "NoteCard"
+      ],
+      "multi_clause": true,
+      "notes": "分号切句的两卡。分号是句间分隔，不是待办条目分隔；不得合成一张卡。",
+      "source": "合成",
+      "source_ref": "apps/local-api/tests/routing-rules-first.test.ts:44（仓库既有用例，非 161 集；此处作为真实语感句收录）"
+    },
+    {
+      "id": "sc-44",
+      "text": "加待办：买牛奶；显示全部",
+      "expected_route": "todo",
+      "routes": [
+        "todo",
+        "overview"
+      ],
+      "expected_card_types": [
+        "TodoCard"
+      ],
+      "multi_clause": true,
+      "notes": "产品口径（2026-11-05）：画布已有同类清单时，「加待办：…」= 往现有清单追加条目，不是新建一张卡；因此零张新卡也正确。历史期望「必须新建 TodoCard」已废弃。",
+      "source": "合成",
+      "source_ref": "apps/local-api/tests/routing-rules-first.test.ts:40（仓库既有用例，非 161 集）",
+      "card_optional": true
+    },
+    {
+      "id": "sc-45",
+      "text": "介绍一下特斯拉，顺便加个待办研究它的财报",
+      "expected_route": "answer",
+      "routes": [
+        "answer",
+        "todo"
+      ],
+      "expected_card_types": [
+        "NewsCard",
+        "TodoCard"
+      ],
+      "multi_clause": true,
+      "notes": "回答 + 卡。待办文案允许「研究它的财报」或「研究特斯拉财报」两种，不接受缺项。禁止编造特斯拉的财务数字。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#multi-05"
+    },
+    {
+      "id": "sc-46",
+      "text": "聚焦左边的待办，高亮第二条",
+      "expected_route": "focus",
+      "routes": [
+        "focus",
+        "highlight"
+      ],
+      "expected_card_types": [],
+      "multi_clause": true,
+      "notes": "两操作同卡、第二个依赖第一个的结果。目标 todo_week（x=0，唯一最左待办），高亮「买牛奶」。已知问题：序数规则抢先，可能误判歧义。",
+      "expected_target": "todo_week",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#multi-03、sub-target-ambiguity-policy.md T9"
+    },
+    {
+      "id": "sc-47",
+      "text": "先显示全部卡片，然后整理一下布局",
+      "expected_route": "overview",
+      "routes": [
+        "overview",
+        "arrange"
+      ],
+      "expected_card_types": [],
+      "multi_clause": true,
+      "notes": "预期澄清：arrange 走宿主操作，与 canvas.fit 不能同包，历史上就是 clarify。澄清且零卡算通过；若已支持一次提交，记录为产品变化而非失败。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#multi-06、sub-multi-card-design.md §1.4-4"
+    },
+    {
+      "id": "sc-48",
+      "text": "把买牛奶勾掉，顺便删了天气卡",
+      "expected_route": "edit",
+      "routes": [
+        "edit",
+        "delete"
+      ],
+      "expected_card_types": [],
+      "multi_clause": true,
+      "notes": "预期澄清（结构限制：删除是宿主操作，不能与 card.update 同包）。绝不允许「只勾掉、天气卡没删」的部分执行。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#multi-04"
+    },
+    {
+      "id": "sc-49",
+      "text": "看下天气，然后提醒我十分钟后出门",
+      "expected_route": "search",
+      "routes": [
+        "search",
+        "countdown"
+      ],
+      "expected_card_types": [
+        "WeatherCard",
+        "CountdownCard"
+      ],
+      "multi_clause": true,
+      "notes": "产品变化（2026-11-04）：新架构允许查询与建卡同回合，两个独立事项都要有结果；天气取不到时必须明确说明（不能再静默丢弃）。旧期望「必须整体澄清」是旧架构限制，已废弃。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#multi-02"
+    },
+    {
+      "id": "sc-50",
+      "text": "记个便笺交周报，加个待办买菜，再设一个 25 分钟计时",
+      "expected_route": "note",
+      "routes": [
+        "note",
+        "todo",
+        "countdown"
+      ],
+      "expected_card_types": [
+        "NoteCard",
+        "TodoCard",
+        "CountdownCard"
+      ],
+      "multi_clause": true,
+      "notes": "三子句三卡，切句上限内（最多 3 段）。三张卡都必须出现，任一缺失即失败；不得把「买菜」并进便笺。",
+      "source": "合成",
+      "source_ref": "切句上限 3 段（decision/split.ts）+ mc-17 观察用例改写"
+    },
+    {
+      "id": "sc-51",
+      "text": "聚焦会议记录，把标题改成首页改版讨论",
+      "expected_route": "focus",
+      "routes": [
+        "focus",
+        "edit"
+      ],
+      "expected_card_types": [],
+      "multi_clause": true,
+      "notes": "先聚焦再改同一张卡的标题。第二句省略了目标，必须继承第一句的 note_meeting；若追问「改哪张」算目标解析失败。",
+      "expected_target": "note_meeting",
+      "source": "合成",
+      "source_ref": "dataset.json#focus-01 + edit-03 组合"
+    },
+    {
+      "id": "sc-52",
+      "text": "帮我记个便签明天交周报，然后设一个倒计时",
+      "expected_route": "note",
+      "routes": [
+        "note",
+        "countdown"
+      ],
+      "expected_card_types": [
+        "NoteCard"
+      ],
+      "multi_clause": true,
+      "notes": "产品变化（2026-11-05）：旧期望「整句澄清（问时长）、零卡」已废弃——clarify 现在可以与动作同批。允许「便签 + 追问」：先建 NoteCard，再用一句 subtitle 问倒计时时长；不允许只建便签而把倒计时静默丢掉，也不允许因为缺时长把已确定的便签丢掉。",
+      "source": "产品文档",
+      "source_ref": "apps/local-api/tests/decision-on.test.ts:65、mc-22"
+    },
+    {
+      "id": "sc-53",
+      "text": "记个便笺明天交周报，然后聚焦它",
+      "expected_route": "note",
+      "routes": [
+        "note",
+        "focus"
+      ],
+      "expected_card_types": [
+        "NoteCard"
+      ],
+      "multi_clause": true,
+      "notes": "创建后对同一张新卡的后续操作，第二子句的「它」应指刚建的便笺，不是旧焦点卡（会议记录）。focus 与 create 都是 Action，可同包；若系统无法引用新卡而澄清，记为已知限制，不算静默漏做。合成用例：历史记录里没有真实样本。",
+      "source": "合成",
+      "source_ref": "sub-multi-card-design.md §4 缺口说明、§6.5-3（明确列为需补造的受控用例）"
+    },
+    {
+      "id": "sc-54",
+      "text": "五分钟后提醒我喝水和吃药，顺便记个便签：该吃药了",
+      "expected_route": "countdown",
+      "routes": [
+        "countdown",
+        "note"
+      ],
+      "expected_card_types": [
+        "CountdownCard",
+        "NoteCard"
+      ],
+      "multi_clause": true,
+      "notes": "单子句多事项（喝水/吃药）+ 便笺。提醒不允许只剩一件事；便笺内容应为「该吃药了」而不是整句。",
+      "source": "合成",
+      "source_ref": "sc-12 与 mc-05 同族组合"
+    },
+    {
+      "id": "sc-55",
+      "text": "删掉天气卡，再显示全部",
+      "expected_route": "delete",
+      "routes": [
+        "delete",
+        "overview"
+      ],
+      "expected_card_types": [],
+      "multi_clause": true,
+      "notes": "预期澄清：删除走宿主操作，与 canvas.fit 不能同包。若已支持一次提交，删除前仍必须先二次确认，确认后删 weather_sh 并适配视图；确认前不得动卡。",
+      "expected_target": "weather_sh",
+      "source": "合成",
+      "source_ref": "dataset.json#delete-02 + overview-01 组合"
+    },
+    {
+      "id": "sc-56",
+      "text": "聚焦待办",
+      "expected_route": "focus",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "目标歧义：画布有两张待办。正确是列 2 个候选并编号（本周待办 / 购物清单），用户回「1」后 1 轮内完成；不得任选一张。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#focus-07、sub-target-ambiguity-policy.md T1"
+    },
+    {
+      "id": "sc-57",
+      "text": "删除待办",
+      "expected_route": "delete",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "歧义 + 删除确认两步必须分开。已知问题：问句「请用编号或完整标题选择」里没有编号，文字与可点候选不一致。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#delete-07、sub-target-ambiguity-policy.md T5"
+    },
+    {
+      "id": "sc-58",
+      "text": "聚焦一下日程卡",
+      "expected_route": "focus",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "缺目标：画布上没有「日程卡」。正确是明确说没有，至多给一个近义确认（会议记录），不得把 5–7 张无关卡列成候选（现状失败点），更不得代建日程卡。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#focus-10、sub-target-ambiguity-policy.md T2"
+    },
+    {
+      "id": "sc-59",
+      "text": "把待办传到用户页我要编辑",
+      "expected_route": "arrange",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "目标歧义 + 传送门动作（card.surface）。2 个候选，选中后只做传送，不代替用户编辑。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#arrange-08、sub-target-ambiguity-policy.md T4"
+    },
+    {
+      "id": "sc-60",
+      "text": "查一下明天上海天气，要是下雨就提醒我带伞",
+      "expected_route": "search",
+      "expected_card_types": [],
+      "multi_clause": false,
+      "notes": "条件句：不得拆成「查询 + 无条件提醒」。正确是澄清或先查后问，不能现在就建带伞提醒；建了即失败。",
+      "source": "dataset 改写",
+      "source_ref": "dataset.json#multi-10、sub-multi-card-design.md §1.3（条件句不被拆句）"
+    }
+  ]
+}

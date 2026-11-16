@@ -1,0 +1,15 @@
+node_modules/
+node_modules
+dist-owner/
+dist/
+dist-online/
+.DS_Store
+*.log
+.vite/
+
+# local cleanup window runtime data (sqlite space store; never commit)
+.local-data/
+
+# server web release artifact (845MB) - archived separately, not in git
+server-web-release/
+
