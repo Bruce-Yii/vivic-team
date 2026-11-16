@@ -24,6 +24,8 @@
 
 先读 [README_FIRST.md](README_FIRST.md) 和 [当前交接](docs/AGENT_HANDOFF.md)，再按任务读取模块。本文件是当前产品与协作约定；旧阶段报告和归档指令只供追溯，不用于重复开发。
 
+- 前端源码留存、服务器构建产物、Git SHA 同步及前后端发布顺序，必须遵循 [前端源码留存与版本同步规范](docs/team/FRONTEND_SOURCE_AND_VERSION_SYNC.md)。`apps/web` 是可编辑源码真值；不得直接把服务器 bundle 当源码修改。后端任务未明确涉及前端时，不重打前端包。
+
 2026-10-23 用户最新优先级：先开发 Vivic 线上端，本地启动器/模型后续再做。全在线用户直接用网页，自有 API 也不强制下载安装。线上版采用隔离会话后端和三步新手引导，严格复用 library Hark；本轮只做可部署版本与本机验证，不发布到服务器。早期“先本地单人版”的排期由此更新，既有本地成果保留。后续设置已改为聊天上的小面板，仅连接/偏好/数据三组；卡片、提醒和空间操作移至聊天顶部 Space，详细配置折叠。保持编辑器、草稿和 owner 挂载，原生 dialog 内的 Radix 弹层使用 ControlOverlayContext，见 `docs/updates/2026-10-23-settings-panel.md`。
 
 2026-10-19 最新安排：三人协作完善本地单人版，再讨论部署、多账号和收费。维护者重点优化核心流程，也可开发新功能；偏前端、偏后端的伙伴可承担 Landing、新卡片和新功能，按与核心的依赖程度分配。当前路线见 [本地开发路线](docs/LOCAL_ROADMAP.md)，分工边界见 [团队任务单](docs/TEAM_TASKS.md)，协作入口见 [贡献指南](CONTRIBUTING.md)。
