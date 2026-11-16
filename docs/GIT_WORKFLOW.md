@@ -1,39 +1,69 @@
 # Git 协作约定
 
-当前协作仓库：`Bruce-Yii/vivic-team`（Public），协作主线 `main`。具体按钮步骤见 [贡献指南](../CONTRIBUTING.md)。前端源码留存与跨设备版本同步按 [专项规范](team/FRONTEND_SOURCE_AND_VERSION_SYNC.md) 执行。
+## 1. 仓库关系
 
-## 三人协作
+- 原始基准仓库：`Bruce-Yii/vivic-team`，用于提供产品源码和历史基线。
+- 实际协作仓库：由协作者复刻到自己账号下的仓库，具体 owner/name 在开工前登记。
+- **所有后续开发都在实际协作仓库内完成。** 原始仓库不是本轮 Issue、分支、PR 或集成目标。
 
-维护者在主仓库的任务分支推进产品。两位伙伴各自 fork 主仓库，在自己的 fork 建任务分支，向主仓库 `main` 提 PR；首轮不授予主仓库写权限。每人本机独立 clone，不共享工作目录。
+详细规则见 [前端源码留存与协作仓库版本同步规范](team/FRONTEND_SOURCE_AND_VERSION_SYNC.md)。
 
-伙伴的 `origin` 指向自己的 fork，`upstream` 指向 `Bruce-Yii/vivic-team`；维护者当前 `origin` 指向主仓库。开始操作先看 `git status --short --branch` 和 `git remote -v`，不得把维护者地址强行写进伙伴的 `origin`。
+## 2. Clone 与 remote
 
-一项任务一条短期分支，一个 PR 只交付这项任务。分工见 [团队任务单](TEAM_TASKS.md)，Landing、新卡片和新功能都可以分配给伙伴。优先选低依赖工作；需要核心配合时先约定接口与样例，避免把整项工作串行等待。
+所有成员和 Agent 都 clone 同一个实际协作仓库，不能各自从原始仓库重新 clone 后再靠手工传文件合并。
 
-## 提交与合入
+- `origin`：实际协作仓库，是日常 fetch / pull / push 的目标。
+- 如果协作仓库是 GitHub Fork，可选配置 `upstream` 指向 `Bruce-Yii/vivic-team`，只用于比较来源变化；不作为 PR 目标。
+- 如果协作仓库是独立复制，不要求配置原始仓库 remote。
 
-1. 任务写清交付内容、允许修改的确切文件和验收标准；领取后再开工。
-2. 从最新主仓库 `main` 开任务分支，例如 `task/fe-001`，不把别人的未合并分支当作前置。
-3. 检查改动文件和验证结果，提交并推到自己的 remote，创建 base 为 `Bruce-Yii/vivic-team:main` 的 PR。
-4. 维护者先核对范围，再看检查和实际结果。越界、删测试、放宽断言或无证据的“已通过”退回。
-5. 由维护者决定合并或暂缓；建议 Squash merge，合并后删除任务分支。下一任务再次同步主仓库。
+开工前核对：
 
-伙伴可修复任务内的问题；任务外 Bug 先记录复现，不顺手扩大范围。维护者可自己处理，也可另开限定修复任务。遇到共享核心冲突先协调，不让 AI 通过整文件覆盖或强推来解决。
+```bash
+git status --short --branch
+git remote -v
+git fetch --all --prune
+git branch --show-current
+git rev-parse HEAD
+```
 
-## 实际权限与文件说明
+确认 `origin` 指向实际协作仓库后，从它的默认分支创建任务分支：
 
-fork 的独立权限是首轮隔离方式：不给伙伴主仓库写权限，他们无法直接推送或合并到主仓库。仅添加文档、CODEOWNERS 或 CI 文件不会自动修改 GitHub 权限。
+```bash
+git switch main
+git pull --ff-only origin main
+git rev-parse HEAD
+git switch -c task/<issue>-<scope>
+```
 
-`.github/CODEOWNERS` 记录审核负责人；文件合入 base 分支后可请求审核，但它不是按路径阻止修改的机制。CI 也不能代替维护者核对任务文件清单。`main-protection` 已在 2026-10-20 核对为 Active，当前要求 PR、Linux/Windows 检查、更新到最新主线、解决审查讨论与 Squash；成员权限和实际 assignee 仍待配置。
+若默认分支不是 `main`，以 GitHub 仓库设置为准。
 
-主仓库保持每项修改经过 PR 和检查的惯例；不要要求维护者的新功能必须等待伙伴审核。若后续开启必须由他人批准的规则，要先处理维护者本人 PR 的可用审核路径。
+## 3. Issue、分支、PR 和合并
 
-Agent 默认做本地工作。用户说“提交 PR”后，可提交本轮改动、推送到当前任务对应 remote 并创建目标 PR，不自动合并、部署或邀请他人。本轮用户要求逐步教学，提交和线上设置先由用户按步骤完成。
+1. Issue 在实际协作仓库创建，写明目标、范围、禁止事项、接口和验收标准。
+2. 每个独立任务从实际协作仓库最新默认分支创建独立分支。
+3. commit 并 push 到实际协作仓库。
+4. PR 的 base 和 head 都属于实际协作仓库；默认 base 是该仓库自己的默认分支。
+5. 在实际协作仓库完成评审和合并。合并后其他成员从该仓库更新基线。
 
-## 检查和保留
+**不要**把 PR 的 base 设为 `Bruce-Yii/vivic-team:main`，除非用户明确要求向原始仓库贡献代码。
 
-CI 检查锁定安装、契约、类型、单测和构建；不运行真实模型测试。失败要保留原因，不能用跳过检查代替修复。测试与缓存保持在忽略目录，凭据/个人画布不入 Git。
+## 4. 多设备和多 Agent 同步
 
-不用 `git reset --hard`、`git clean -fdx` 或强推清理别人工作。旧 `ECdison6227/vivic` / `agent/next-iteration` 不属于当前操作目标，历史记录见 `归档`。
+- 本地未提交改动不会自动同步给其他设备或 Agent。
+- commit 但未 push，其他人仍无法获取。
+- 跨设备交接时，先 push，再提供仓库名、分支和精确 SHA。
+- 每个 Agent 使用独立 worktree / 工作目录和独立任务分支；不允许多个 Agent 在同一个目录中同时切分支或覆盖文件。
+- 同一任务需要接力时，后续执行者先 fetch 指定分支，核对 SHA 和工作区状态，再继续。
+- 任务分支合并后，下一项任务从实际协作仓库最新默认分支创建。
 
-参考：[GitHub forks](https://docs.github.com/en/pull-requests/reference/forks)、[CODEOWNERS 的作用和限制](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)。
+## 5. 原始仓库更新如何同步
+
+不能无条件把原始仓库的 `main` merge 到实际协作仓库。需要同步来源更新时，先 compare commit 和文件差异，再明确选择需要的提交或文件；检查不会带入无关窗口产物、实验配置或自动化设置后，才在实际协作仓库集成。
+
+## 6. 安全与保护
+
+- 不用 `git reset --hard`、`git clean -fdx` 或强推清理他人工作。
+- 不提交凭据、生产数据库、个人画布或线上配置。
+- 不因解决冲突而整文件覆盖他人的有效改动。
+- 不擅自部署、重启服务器或修改生产配置。
+- 自动化工作流、仓库权限和分支保护由协作仓库所有者单独决定；本协作规范不迁移或修改这些设置。
