@@ -50,6 +50,9 @@ const sseResponse = (events: Array<Record<string, unknown>>) => {
   });
 };
 
+// contracts 要求 sessionId 为 UUID；网关在协议校验阶段即拒绝非 UUID。
+const TEST_SESSION_ID = crypto.randomUUID();
+
 describe("StepfunAsrProvider & AsrGatewayServer wiring", () => {
   it("streams PCM chunks and emits partial/final from StepFun SSE on commit", async () => {
     const fetchMock = vi.fn(async () =>
@@ -79,7 +82,7 @@ describe("StepfunAsrProvider & AsrGatewayServer wiring", () => {
     socket.emit({
       type: "session.start",
       protocolVersion: ASR_TRANSPORT_VERSION,
-      sessionId: "sess-1",
+      sessionId: TEST_SESSION_ID,
       provider: "stepfun",
       language: "zh",
       audio: { format: { type: "pcm", codec: "pcm_s16le", rate: 16000, bits: 16, channel: 1 } },
@@ -91,7 +94,7 @@ describe("StepfunAsrProvider & AsrGatewayServer wiring", () => {
     socket.emit({
       type: "audio.chunk",
       protocolVersion: ASR_TRANSPORT_VERSION,
-      sessionId: "sess-1",
+      sessionId: TEST_SESSION_ID,
       seq: 0,
       audio: Buffer.from(pcmChunk).toString("base64"),
     });
@@ -101,7 +104,7 @@ describe("StepfunAsrProvider & AsrGatewayServer wiring", () => {
     socket.emit({
       type: "session.end",
       protocolVersion: ASR_TRANSPORT_VERSION,
-      sessionId: "sess-1",
+      sessionId: TEST_SESSION_ID,
     });
 
     await vi.waitFor(() => {
@@ -123,7 +126,7 @@ describe("StepfunAsrProvider & AsrGatewayServer wiring", () => {
     socket.emit({
       type: "session.start",
       protocolVersion: ASR_TRANSPORT_VERSION,
-      sessionId: "sess-missing",
+      sessionId: crypto.randomUUID(),
       provider: "stepfun",
       language: "zh",
       audio: { format: { type: "pcm", codec: "pcm_s16le", rate: 16000, bits: 16, channel: 1 } },
@@ -142,7 +145,7 @@ describe("StepfunAsrProvider & AsrGatewayServer wiring", () => {
     socket.emit({
       type: "session.start",
       protocolVersion: ASR_TRANSPORT_VERSION,
-      sessionId: "sess-local",
+      sessionId: crypto.randomUUID(),
       provider: "local",
       language: "zh",
       audio: { format: { type: "pcm", codec: "pcm_s16le", rate: 16000, bits: 16, channel: 1 } },
