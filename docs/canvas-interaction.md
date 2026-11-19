@@ -1,6 +1,8 @@
 # 画布拖动、Pin 与 Control 设置接入
 
 > 主线集成更新（2026-10-15）：Control 设置、Stage/背景/字幕/全局减少动效均已挂载。Auto 的 dayStart/dayEnd 默认 07:00–19:00，可修改且支持跨夜；分钟边界及隐藏恢复更新，React Flow 和背景使用同一个 resolved theme。按尺寸排版、旧画布重叠修复及「重新排布」已实现。下文模块初次交付范围属于历史记录；当前实际浏览器结果见 `最终报告`。
+>
+> 2026-11-20 对齐：桌面控制页的卡片 Pin 控件与 `CanvasSettings` 的 `selectedCardId` 已移除；`host.setCardPinned` API 与手机端固定入口保留。
 
 本次仅修改 CanvasView、canvasStore、sync 四个模块，新增 CanvasSettings、相关测试和本说明。ControlApp、StageRoot、全局 CSS、cards、contracts 和 package 保持原样；由主线挂载设置和全局减少动效配置。
 
@@ -10,10 +12,10 @@
 import { CanvasSettings } from "@/control/CanvasSettings";
 
 // 仅 /control；host 是已有的 ControlHost。
-<CanvasSettings host={host} disabled={busy} selectedCardId={selectedCardId} />
+<CanvasSettings host={host} disabled={busy} />
 ```
 
-`disabled`、`selectedCardId` 均可省略。省略 selectedCardId 时列出当前画布所有未退出的卡片；传入时仅显示选中卡片。组件订阅 host snapshot 与共享 canvasStore，沿用现有 Button、Radix ToggleGroup/Switch 和 Control 面板样式，无需新增 CSS。只读、未 ready、接管恢复中或 disabled 时禁用控件。没有 Display 设置入口。
+`disabled` 可省略。组件按当前画布展示主题、自动时段、减少动效与字幕偏好，不按单卡范围过滤，也不提供桌面 Pin 控件；组件订阅 host snapshot 与共享 canvasStore，沿用现有 Button、Radix ToggleGroup/Switch 和 Control 面板样式，无需新增 CSS。只读、未 ready、接管恢复中或 disabled 时禁用控件。没有 Display 设置入口。卡片固定只通过 owner API（AI/手机等既有入口）执行。
 
 ```ts
 host.setCardPinned(cardId, pinned, canvasId?); // 默认当前画布；允许指定已有的非当前画布
@@ -61,7 +63,7 @@ MotionConfig 对显式设置 duration 的既有代码不能代替其 reduced 分
 ## 冲突、切画布与恢复
 
 - 同一卡片的并发拖动使用 layout 基线比较，先被 owner 接受的操作胜出；随后 stale move 不覆盖它。无关卡片/内容更新不强制废弃当前拖动。
-- Pin 在 Control 操作；pinned 卡片不可拖动。拖动中收到 Pin/删除/布局变化的 snapshot，会清除该次预览。失焦或 pointercancel 也会取消。
+- Pin 通过 owner API 操作；pinned 卡片不可拖动。拖动中收到 Pin/删除/布局变化的 snapshot，会清除该次预览。失焦或 pointercancel 也会取消。
 - Display URL 的 pinnedCanvasId 与卡片 layout.pinned 是两个独立概念。固定在旧画布的 Display 可请求移动那个画布的卡片，owner 使用隔离 store 修改对应 record，不切换主控画布；跟随模式只接收 activeCanvasId 对应的 snapshot，旧画布更新不会把它切回去。
 - 接管前先从 DB 恢复；恢复失败保持不可写。重新取得 owner 权限会更换交互 epoch，旧拖动不能跨接管提交。旧 owner 的排队写入在失权后不再执行；旧 owner 的 off 不会把新 owner 标为离线。
 - owner 每 1200ms 发轻量存活通知；Display 在 3600ms 未收到存活信号时停止接受交互，并每 1200ms 重试 snapshot。owner 不在时保留最后画面；重连使用 snapshot，不重放旧交互。
@@ -76,7 +78,7 @@ MotionConfig 对显式设置 duration 的既有代码不能代替其 reduced 分
 - `apps/web/src/sync/__tests__/canvasInteraction.test.ts`：先落盘后同步、失败不确认、冲突、Pin、inactive canvas、schema/坐标/限流、去重、只读零写入、接管、失联/重试、设置恢复。
 - `apps/web/src/sync/__tests__/browserRuntime.test.ts`：runtime 切换/停止、旧 IndexedDB 读取不覆盖新 snapshot、Display 零持久化写入。
 - `apps/web/src/canvas/__tests__/CanvasView.test.tsx`：React Flow 预览不污染 store、丢包回退、Pin 中断、无 owner、减少动效和 60 卡缩放配置。
-- `apps/web/src/control/__tests__/CanvasSettings.test.tsx`：真实 Radix 控件与 owner API、禁用、选中范围、失败反馈。
+- `apps/web/src/control/__tests__/CanvasSettings.test.tsx`：真实 Radix 控件与 owner API、禁用、时间偏好与失败反馈；桌面面板无 Pin 控件，Pin API 仍可用。
 - 原有 `owner.test.ts`、`syncProtocol.test.ts`、`canvasStore.test.ts`、`autofit.test.ts`、`persistence.test.ts` 及 reminder owner/undo 回归继续执行。
 - `apps/web/tests/e2e/canvas-interaction.spec.ts`：独立的真实拖动/刷新/Pin/undo，以及 800×600 下 60 卡 fit 场景，供主线统一执行。
 

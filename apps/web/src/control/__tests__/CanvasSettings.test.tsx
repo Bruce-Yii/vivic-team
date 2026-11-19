@@ -30,7 +30,7 @@ afterEach(async () => {
   await act(async () => root.unmount()); stops.splice(0).forEach(stop => stop());
   container.remove(); vi.unstubAllGlobals();
 });
-const render = (disabled = false, selectedCardId?: string) => act(async () => root.render(<CanvasSettings host={host} disabled={disabled} selectedCardId={selectedCardId} />));
+const render = (disabled = false) => act(async () => root.render(<CanvasSettings host={host} disabled={disabled} />));
 const click = (button: HTMLElement) => act(async () => { button.click(); await flushChannel(); });
 const setTime = (label: string, value: string) => act(async () => {
   const input = container.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`)!;
@@ -41,16 +41,14 @@ const setTime = (label: string, value: string) => act(async () => {
 });
 
 describe("CanvasSettings", () => {
-  it("uses the owner APIs for theme, reduced motion, captions and pin", async () => {
+  it("uses the owner APIs for theme, reduced motion and captions without a desktop pin control", async () => {
     await render();
     await click([...container.querySelectorAll("button")].find(b => b.textContent === "深色")!);
     expect(host.getSnapshot().preferences.theme).toBe("dark");
     await click(container.querySelector<HTMLButtonElement>('#canvas-pref-reducedMotion')!);
     await click(container.querySelector<HTMLButtonElement>('#canvas-pref-subtitles')!);
     expect(host.getSnapshot().preferences).toEqual({ theme: "dark", reducedMotion: true, subtitles: false });
-    await click(container.querySelector<HTMLButtonElement>('[data-vivic-pin="a"]')!);
-    expect(canvasStore.getState().cards[0]!.record.layout.pinned).toBe(true);
-    expect(container.querySelector('[data-vivic-pin="a"]')!.getAttribute("aria-pressed")).toBe("true");
+    expect(container.querySelector("[data-vivic-pin]")).toBeNull();
   });
   it("disables every control while readonly or explicitly disabled", async () => {
     await render(true);
@@ -82,12 +80,17 @@ describe("CanvasSettings", () => {
     expect(container.querySelector<HTMLInputElement>('input[aria-label="白天开始时间"]')?.value).toBe("22:15");
     expect(container.querySelector<HTMLInputElement>('input[aria-label="白天结束时间"]')?.value).toBe("06:45");
   });
-  it("supports selected-card scope and gives feedback on rejected mutations", async () => {
-    await render(false, "missing"); expect(container.querySelector('[data-vivic-pin]')).toBeNull();
-    await render(false, "a");
-    vi.spyOn(host, "setCardPinned").mockReturnValue({ ok: false, error: "readonly-not-owner" });
-    await click(container.querySelector<HTMLButtonElement>('[data-vivic-pin="a"]')!);
+  it("keeps the pin API outside the desktop panel and reports rejected preference mutations", async () => {
+    await render();
+    expect(container.querySelector("[data-vivic-pin]")).toBeNull();
+    expect(typeof host.setCardPinned).toBe("function");
+    await act(async () => { expect(host.setCardPinned("a", true).ok).toBe(true); });
+    expect(canvasStore.getState().cards[0]!.record.layout.pinned).toBe(true);
+    await act(async () => { expect(host.setCardPinned("missing", true).ok).toBe(false); });
+    const before = host.getSnapshot().preferences;
+    vi.spyOn(host, "setPreferences").mockReturnValue({ ok: false, error: "readonly-not-owner" });
+    await click([...container.querySelectorAll("button")].find(button => button.textContent === "浅色")!);
+    expect(host.getSnapshot().preferences).toEqual(before);
     expect(container.querySelector('[role="status"]')?.textContent).toContain("尚未保存");
-    expect(canvasStore.getState().cards[0]!.record.layout.pinned).toBe(false);
   });
 });

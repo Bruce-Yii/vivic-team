@@ -38,7 +38,7 @@ export function requestMicrophonePermission(): Promise<void> {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         stream.getTracks().forEach(track => track.stop());
       }
-      update("granted", "麦克风已授权；按住说话或开启单次监听时才会录音。");
+      update("granted", "麦克风已授权；仅在控制页前台持续监听或按住说话时录音。");
     } catch (error) {
       const name = error instanceof DOMException ? error.name : "";
       if (name === "NotAllowedError" || name === "SecurityError") {

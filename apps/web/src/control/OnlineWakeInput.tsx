@@ -4,7 +4,11 @@ import { MicCapture } from "@/ai/localSpeech/micCapture";
 import { encodeVoiceWav } from "@/ai/pcm";
 import type { LocalWakeInputProps } from "./LocalWakeInput";
 
-/** Lightweight audio energy segmentation; recognition runs on the configured API. */
+/**
+ * Foreground continuous cloud listener: arms with the foreground, auto-continues after each
+ * delivered segment, and pauses while hidden, unfocused, disabled, or TTS is speaking.
+ * Energy segmentation only; recognition still runs on the configured API.
+ */
 export function OnlineWakeInput(props: LocalWakeInputProps) {
   const latest = useRef(props); latest.current = props;
   const [enabled, setEnabled] = useState(true), [active, setActive] = useState(false), [error, setError] = useState("");

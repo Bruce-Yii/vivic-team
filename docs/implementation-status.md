@@ -16,7 +16,7 @@
 | 信息来源 | 天气、搜索和受限网页正文；结构化数据与来源校验 | [数据适配](data-providers.md)、[搜索回退](search-fallback-20261016.md) |
 | 提醒 | 纯计时、事项、日期/重复/有限条件、到期退场与历史；由 Control 运行时调度 | `apps/web/src/reminders/` |
 | 图片 | 当次显式发送的图片分析；卡片媒体按已有场景能力处理 | [输入图片](image-input.md)、场景卡片说明 |
-| 语音 | 独立 STT/TTS 配置、预录短反馈、本地 ASR/VAD/KWS 自动下载；默认唤醒词 `vivic`，监听需手动开启 | [语音架构](provider-voice-architecture.md)、[本地语音](local-speech.md) |
+| 语音 | 独立 STT/TTS 配置、预录短反馈、本地 ASR/VAD/KWS 自动下载；默认唤醒词 `vivic`，控制页前台持续监听，说完自动续听，可手动停止后重新开启 | [语音架构](provider-voice-architecture.md)、[本地语音](local-speech.md) |
 | 官网 | 本地演示源码和线上 HTML 补丁工具保留；本轮不改发布来源 | [官网当前说明](website-beta-only.md) |
 
 ## 本轮验证及限制

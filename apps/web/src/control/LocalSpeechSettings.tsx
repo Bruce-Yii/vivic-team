@@ -35,7 +35,7 @@ export const LocalSpeechSettings = ({ disabled = false, manager = localSpeechMod
     <section className="rounded-xl border border-neutral-200 bg-white p-4" data-vivic-local-speech>
       <div className="flex items-center gap-2 text-sm font-semibold"><HardDrive className="h-4 w-4" />本地语音</div>
       <p className="mt-2 text-xs text-neutral-500">按需下载，打开设置不会下载模型。云端识别无需准备本地识别模型。</p>
-      <p className="mt-2 text-xs text-neutral-600">默认唤醒词已配置为「{DEFAULT_WAKE_PHRASE}」。麦克风权限会在启动时请求；点击“开启单次监听”后才开始监听，默认不监听。</p>
+      <p className="mt-2 text-xs text-neutral-600">默认唤醒词已配置为「{DEFAULT_WAKE_PHRASE}」。控制页前台持续监听，说完一句自动续听下一轮；点击麦克风可停止，停止后需再次点击重新开启。</p>
       <ul className="mt-3 space-y-3">
         {SPEECH_MODELS.map(model => {
           const state = snapshot.models[model.id];

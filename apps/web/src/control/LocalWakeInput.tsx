@@ -14,7 +14,7 @@ export interface LocalWakeInputProps {
   mode?: "wake" | "vad";
   onTranscript: (text: string) => void;
   onSegment?: (segment: Segment) => void | Promise<void>;
-  /** Parent cancels any TTS/PTT here; no recording is started by mounting this component. */
+  /** Parent cancels any TTS/PTT here before the foreground listener starts or auto-resumes. */
   onBegin?: () => void;
   /** Increment on provider change, external cancellation, or a PTT start in the same window. */
   cancelKey?: string | number;
@@ -26,7 +26,11 @@ export interface LocalWakeInputProps {
 type Phase = "idle" | "loading" | "listening" | "recording" | "transcribing" | "delivering" | "done" | "error";
 interface Active { controller: AbortController; session: LocalSpeechSession; mic: MicCapture; accepting: boolean }
 
-/** Explicit foreground one-utterance opt-in; never a background/always-on listener. */
+/**
+ * Foreground continuous listener: arms on mount, auto-resumes the next round after each
+ * utterance, and stays paused after the user stops it until the mic is clicked again.
+ * It is not a background/always-on listener: blur, hidden pages, TTS and PTT stop capture.
+ */
 export const LocalWakeInput = (props: LocalWakeInputProps) => OWNER_ONLINE_BUILD ? <OnlineWakeInput {...props} /> : <BrowserWakeInput {...props} />;
 const BrowserWakeInput = (props: LocalWakeInputProps) => {
   const currentProps = useRef(props); currentProps.current = props;
@@ -35,6 +39,7 @@ const BrowserWakeInput = (props: LocalWakeInputProps) => {
   const mounted = useRef(true);
   const [phase, setPhase] = useState<Phase>("idle");
   const [message, setMessage] = useState<string | null>(null);
+  // Continuous foreground listening: the first round arms as soon as the component mounts.
   const [armed, setArmed] = useState(true);
   const [kick, setKick] = useState(0);
   const hold = useRef(false);
@@ -48,6 +53,8 @@ const BrowserWakeInput = (props: LocalWakeInputProps) => {
     mounted.current = true;
     return () => { mounted.current = false; stop(); };
   }, [stop]);
+  // Scope changes dispose the current round; the auto-arm effect below starts a fresh one
+  // for the new owner/provider/PTT scope when capture is still allowed.
   useEffect(() => { stop(); }, [props.ownerKey, props.recognition, props.mode, props.cancelKey, stop]);
   useEffect(() => {
     const pause = () => { hold.current = true; stop(); };
@@ -104,7 +111,7 @@ const BrowserWakeInput = (props: LocalWakeInputProps) => {
     try {
       props.onBegin?.();
       activity.current = beginWakeActivity(() => stop());
-      // Only this explicit click prepares KWS/VAD. Online users need no desktop launcher.
+      // Arming (mount or auto-resume) prepares KWS/VAD; online users use the cloud listener instead.
       const required = mode === "wake" ? ["vad", "kws-zh-en"] as const : ["vad"] as const;
       const ready = Promise.all(required.map(id => localSpeechModels.prepareModel(id, { signal: controller.signal }))).then(() => {
         controller.signal.throwIfAborted(); return session.start();
@@ -132,15 +139,15 @@ const BrowserWakeInput = (props: LocalWakeInputProps) => {
     setKick(value => value + 1);
   };
   const caption = message ?? (phase === "loading" ? "正在准备本地模型与麦克风权限…"
-    : phase === "listening" ? (props.mode === "vad" ? "正在前台等待一句话…" : `正在前台等待「${DEFAULT_WAKE_PHRASE}」…`)
-    : phase === "recording" ? "正在收取一条指令，静音后结束。"
+    : phase === "listening" ? (props.mode === "vad" ? "正在前台持续等待一句话…" : `正在前台持续等待「${DEFAULT_WAKE_PHRASE}」…`)
+    : phase === "recording" ? "正在收取一条指令，静音后结束并自动续听。"
     : phase === "transcribing" ? "已停止麦克风，正在本地识别…"
     : phase === "delivering" ? "已停止麦克风，正在交付语音识别…"
-    : phase === "done" ? "本次识别已结束；继续使用需重新开启。"
-    : "默认不监听。一次开启最多前台等待 5 分钟，只收一段后停止；失焦即取消。");
-  const title = props.mode === "vad" ? "本地语音分段（单次）" : `本地唤醒（单次）· 固定短语：${DEFAULT_WAKE_PHRASE}`;
+    : phase === "done" ? "本轮识别已结束，正在自动续听下一轮…"
+    : "持续前台监听：每轮最多等待 5 分钟，一段指令最多 60 秒；说完自动续听，失焦暂停。");
+  const title = props.mode === "vad" ? "本地语音分段（持续监听）" : `本地唤醒（持续监听）· 固定短语：${DEFAULT_WAKE_PHRASE}`;
   const mic = <button type="button" className="vivic-wake-mic" data-on={armed} aria-pressed={armed} data-vivic-local-wake-toggle
-    aria-label={armed ? "关闭监听" : "开启监听"} title={armed ? "监听已开启" : "监听已关闭"} onClick={toggle}>
+    aria-label={armed ? "停止监听" : "重新开启监听"} title={armed ? "持续监听中，点击停止" : "监听已停止，点击重新开启"} onClick={toggle}>
     {phase === "loading" ? <LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Mic aria-hidden="true" />}
   </button>;
   if (props.compact) return <div className="vivic-wake" data-vivic-local-wake data-local-wake-phase={phase} data-listening={armed || undefined}>
@@ -150,6 +157,6 @@ const BrowserWakeInput = (props: LocalWakeInputProps) => {
   return <div className="mt-3" data-vivic-local-wake data-local-wake-phase={phase}>
     <p className="mb-2 text-xs text-neutral-600">{title}</p>
     {mic}
-    <p className={`mt-2 text-xs ${phase === "error" ? "text-red-700" : "text-neutral-500"}`} role="status" aria-live="polite">{armed ? caption : "监听已关闭。"}</p>
+    <p className={`mt-2 text-xs ${phase === "error" ? "text-red-700" : "text-neutral-500"}`} role="status" aria-live="polite">{armed ? caption : "监听已停止，点击麦克风重新开启。"}</p>
   </div>;
 };
