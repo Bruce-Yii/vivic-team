@@ -68,6 +68,8 @@ interface Session {
   endedReason?: string;
   seenSeqs: Set<number>;
   expectedSeq: number;
+  /** Bumped on every accepted resume so timers from the previous connection go inert. */
+  epoch: number;
   finalSent: boolean;
   endedSent: boolean;
   timers: { maxDuration?: ReturnType<typeof setTimeout>; idle?: ReturnType<typeof setTimeout>; grace?: ReturnType<typeof setTimeout>; finalize?: ReturnType<typeof setTimeout> };
@@ -173,6 +175,7 @@ export class AsrGateway {
       timers: {},
       seenSeqs: new Set(),
       expectedSeq: 0,
+    epoch: 0,
       finalSent: false,
       endedSent: false,
     };    this.sessions.set(sessionId, session);
@@ -396,6 +399,16 @@ export class AsrGateway {
           }
           session = existing;
           resume = true;
+          // The reconnecting client tells us where its numbering resumes. Without this
+          // rebase the gateway kept the pre-drop expectedSeq while the client restarted
+          // at 0 (or continued elsewhere), so every frame was rejected as out-of-order.
+          // Invalidate ack timers left over from the dropped connection: their expiry
+          // path rolls expectedSeq back, which would desync the resumed stream.
+          session.epoch += 1;
+          if (typeof msg.resumeSeq === "number") {
+            session.expectedSeq = msg.resumeSeq;
+            session.seenSeqs.clear();
+          }
           if (session.timers.grace) {
             clearTimeout(session.timers.grace);
             session.timers.grace = undefined;
@@ -545,9 +558,13 @@ export class AsrGateway {
         let consumed = false;
         // Per-chunk ack: single callback registered ONCE, handling both sync and async.
         // Timer is cleared when consumption is signalled; timeout sends error (not false ACK).
+        const epoch = session.epoch;
         const timer = setTimeout(() => {
           if (consumed) return;
           consumed = true;
+          // The connection that owned this frame is gone; the resumed stream uses a
+          // rebased sequence, so rolling back now would desync it permanently.
+          if (session.epoch !== epoch) return;
           session.bufferedChunks = Math.max(0, session.bufferedChunks - 1);
           session.bufferedBytes = Math.max(0, session.bufferedBytes - bytes);
           session.seenSeqs.delete(msg.seq);

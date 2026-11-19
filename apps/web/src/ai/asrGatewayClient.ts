@@ -58,13 +58,15 @@ export class AsrGatewayClient {
   private sendSessionStart(resumeSessionId?: string): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
     this.sessionId = resumeSessionId ?? crypto.randomUUID();
-    this.seq = 0;
+    // A resume continues this connection's own numbering: resetting to 0 here made
+    // the gateway reject every frame as out-of-order after a reconnect.
+    if (!resumeSessionId) this.seq = 0;
     this.sessionActive = true;
     this.ws.send(JSON.stringify({
       type: "session.start",
       protocolVersion: "vivic-asr-protocol@1",
       sessionId: this.sessionId,
-      ...(resumeSessionId ? { resumeSessionId } : {}),
+      ...(resumeSessionId ? { resumeSessionId, resumeSeq: this.seq } : {}),
       audio: { format: DEFAULT_AUDIO_FORMAT },
       provider: this.options.provider,
       language: this.options.language,
