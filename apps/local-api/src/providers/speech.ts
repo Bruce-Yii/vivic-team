@@ -10,8 +10,13 @@ export function resolveSavedSpeech(store: ProviderStore): { saved: ProviderConfi
   if (!dedicated && store.list().some(entry => entry.roles.includes("tts"))) {
     return { error: "语音回复的 TTS 连接已关闭，请在模型设置中启用。" };
   }
-  const main = store.findForRole("main");
-  const saved = dedicated ?? (main?.protocol.startsWith("stepfun") ? main : undefined);
+  // Same rule as ASR: a newer chat-only main row may legitimately win the
+  // planner role, but it cannot provide speech. Find an enabled StepFun main
+  // row explicitly instead of relying on the `main` ordering.
+  const speechCapableMain = store.list()
+    .filter(entry => entry.enabled && entry.roles.includes("main") && entry.protocol.startsWith("stepfun"))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  const saved = dedicated ?? speechCapableMain;
   if (!saved) return;
   if (!["stepfun-v1", "stepfun-plan", "openai-compatible"].includes(saved.protocol)) {
     return { error: "所选 TTS 连接使用了非语音协议，请选择语音 API。" };
