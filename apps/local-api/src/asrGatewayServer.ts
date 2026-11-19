@@ -4,7 +4,13 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { WebSocket, WebSocketServer } from "ws";
 import { loadConfig } from "./config.js";
+import type { CredentialStore } from "./credentials.js";
+import type { ProviderStore } from "./providers/store.js";
+import { resolveSavedAsr } from "./providers/asr.js";
 import { createAsrGateway, type AsrSocket } from "./asrGateway.js";
+import { MockAsrProvider, type AsrProviderAdapter, type MockAsrProviderConfig } from "./asrMockProvider.js";
+import { StepfunAsrProvider, type StepfunAsrBackend } from "./asrStepfunProvider.js";
+import { ASR_MODEL } from "./asr.js";
 import { AsrErrorCode } from "@vivic/contracts";
 
 class WsAsrSocket implements AsrSocket {
@@ -37,8 +43,29 @@ const safeTokenOk = (presented: string, expected: string): boolean => {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 };
 
+const createUnsupportedAsrProvider = (reason: string): AsrProviderAdapter => ({
+  start() {
+    throw new Error(reason);
+  },
+  sendAudio() {},
+  reset() {},
+  onAudioConsumed() {
+    return () => {};
+  },
+  commit() {},
+  cancel() {},
+  close() {},
+  onPartial() {},
+  onFinal() {},
+  onError() {},
+  onEnded() {},
+});
+
 export interface AsrGatewayServerOptions {
   config?: ReturnType<typeof loadConfig>;
+  credentials?: CredentialStore;
+  providerStore?: ProviderStore;
+  fetchImpl?: typeof fetch;
   path?: string;
   port?: number;
   host?: string;
@@ -47,7 +74,57 @@ export interface AsrGatewayServerOptions {
 export function createAsrGatewayServer(options: AsrGatewayServerOptions = {}) {
   const config = options.config ?? loadConfig();
   const gatewayPath = options.path ?? "/asr";
+
+  const resolveStepfunBackend = (): StepfunAsrBackend | { error: string } | undefined => {
+    if (options.providerStore) {
+      const selected = resolveSavedAsr(options.providerStore);
+      if (selected && "error" in selected) return { error: selected.error ?? "语音识别连接不可用。" };
+      if (selected) {
+        return {
+          baseUrl: selected.baseUrl,
+          model: selected.model,
+          headers: selected.headers,
+          protocol: selected.protocol,
+        };
+      }
+    }
+    const secret = options.credentials?.getSecret();
+    if (secret) {
+      return {
+        baseUrl: config.stepfunBaseUrl.replace(/\/+$/, ""),
+        model: ASR_MODEL,
+        headers: { authorization: `Bearer ${secret.apiKey}` },
+        protocol: "sse",
+      };
+    }
+    const envKey = process.env.VIVIC_STEPFUN_API_KEY?.trim();
+    if (envKey) {
+      return {
+        baseUrl: config.stepfunBaseUrl.replace(/\/+$/, ""),
+        model: ASR_MODEL,
+        headers: { authorization: `Bearer ${envKey}` },
+        protocol: "sse",
+      };
+    }
+    return undefined;
+  };
+
+  const providerFactory = (sessionConfig: MockAsrProviderConfig): AsrProviderAdapter => {
+    const requested = sessionConfig.provider ?? "mock";
+    if (requested === "mock") {
+      return new MockAsrProvider(sessionConfig);
+    }
+    if (requested === "stepfun") {
+      return new StepfunAsrProvider({
+        resolveBackend: resolveStepfunBackend,
+        fetchImpl: options.fetchImpl,
+      });
+    }
+    return createUnsupportedAsrProvider(`ASR provider "${requested}" 暂未接入流式网关，请选择 StepFun。`);
+  };
+
   const gateway = createAsrGateway({
+    providerFactory,
     authenticate: async (request) => {
       const origin = request.headers.get("origin");
       if (origin && !config.allowedOrigins.includes(origin)) {
