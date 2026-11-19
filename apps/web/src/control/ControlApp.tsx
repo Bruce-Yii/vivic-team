@@ -31,7 +31,7 @@ import type { ReminderNotice } from "@/reminders/reminders";
 import { deliveredNoticeCurrent } from "@/reminders/reminders";
 import { cancelVoiceInput, getVoiceInputSnapshot, isVoiceInputBusy, subscribeVoiceInput } from "@/ai/voiceInput";
 import { setFullDuplexTaskIdGetter, setFullDuplexCancelTaskByIdHandler, setFullDuplexTaskProjection, getFullDuplexTaskProjection, type FullDuplexCommandOptions } from "@/ai/fullDuplex";
-import { inferTaskMutationClass, projectTask } from "@/ai/taskProjection";
+import { inferTaskMutationClass, isStaleProjection, projectDecisionTask, projectTask } from "@/ai/taskProjection";
 import { CanvasSettings } from "./CanvasSettings";
 import { RemindersSection } from "./RemindersSection";
 import { NotificationSettings } from "./NotificationSettings";
@@ -636,7 +636,14 @@ export const ControlApp = () => {
           cancelShortFeedback(requestId);
           if (result.task?.id) {
             lastTaskIdRef.current = result.task.id;
-            setFullDuplexTaskProjection(projectTask({ id: result.task.id, status: result.task.status, message: result.message ?? "", mutationClass: result.task.id === taskId ? mutationClass : inferTaskMutationClass(trimmed) }));
+            // Consume the Host's real decision-task status: step, execution receipt id and
+            // canvas version travel with the response. An out-of-order frame must not
+            // regress the projection the coordinator already saw.
+            const projected = projectDecisionTask(result.task, {
+              message: result.message ?? result.task.reason ?? "",
+              mutationClass: result.task.id === taskId ? mutationClass : inferTaskMutationClass(trimmed),
+            });
+            if (!isStaleProjection(getFullDuplexTaskProjection(), projected)) setFullDuplexTaskProjection(projected);
           }
           setBackendOnline(true);
           // In explicit legacy fallback, retain the old exact target chooser.

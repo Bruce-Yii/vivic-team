@@ -90,6 +90,10 @@ export const ChatPage = ({ hidden, host, theme, feedback, notice, onOpenSettings
         FD #{fd.turnId}: {fd.status} {fd.userSpeaking?"(user)":""} {fd.aiSpeaking?"(ai)":""}<br/>
         {fd.lastTranscript ? `“${fd.lastTranscript}” → ${fd.lastIntent}` : ""}
         {fd.pendingConstraints.length > 0 ? <><br/>待应用约束: {fd.pendingConstraints.length}</> : null}
+        {fd.task ? <><br/>任务 {fd.task.status} · step {fd.task.step}
+          {fd.task.executionId ? ` · ${fd.task.executionId.slice(0, 8)}` : ""}
+          {typeof fd.task.canvasVersion === "number" ? ` · v${fd.task.canvasVersion}` : ""}
+          {fd.task.mutationClass !== "unknown" ? ` · ${fd.task.mutationClass}` : ""}</> : null}
         {fd.error ? `错误: ${fd.error}` : ""}
       </div>}
       <header className="vivic-chat-header">

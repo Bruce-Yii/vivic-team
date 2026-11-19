@@ -10,6 +10,12 @@ export interface TaskProjection {
   message: string;
   createdCardIds: string[];
   focusCardId?: string;
+  /** Monotonic decision-task step from the Host; later steps supersede earlier ones. */
+  step: number;
+  /** Real execution receipt id when the Host has started executing this task. */
+  executionId?: string;
+  /** Space version the decision was planned against (real Host version, not a local guess). */
+  canvasVersion?: number;
   mutationClass: TaskMutationClass;
   /** True only when the running task is read-only and may be safely superseded by a new turn. */
   canSafelySupersede: boolean;
@@ -36,28 +42,55 @@ export function inferTaskMutationClass(text: string): TaskMutationClass {
   return "unknown";
 }
 
+/**
+ * Map the decision protocol vocabulary (`DecisionTaskStatus.status`) onto the
+ * projection vocabulary. `awaiting_execution` is real, accepted work in flight;
+ * `completed` is a succeeded task. Unknown wire values stay `unknown` instead of
+ * being cast into a stronger claim.
+ */
+export function mapDecisionStatus(status: string): TaskProjection["status"] {
+  switch (status) {
+    case "awaiting_execution": return "running";
+    case "completed": return "succeeded";
+    case "awaiting_clarification": return "awaiting_clarification";
+    case "cancelled": return "cancelled";
+    case "failed": return "failed";
+    case "accepted": return "accepted";
+    case "running": return "running";
+    case "succeeded": return "succeeded";
+    default: return "unknown";
+  }
+}
+
 export function projectTask(task: {
   id: string;
   status: string;
   message: string;
   createdCardIds?: string[];
   focusCardId?: string;
+  step?: number;
+  executionId?: string;
+  canvasVersion?: number;
   mutationClass?: TaskMutationClass;
 }): TaskProjection {
-  const terminal = ["succeeded", "completed", "failed", "cancelled", "unknown", "awaiting_clarification"].includes(task.status);
-  const isActive = !terminal && task.status !== "awaiting_clarification";
+  const status = mapDecisionStatus(task.status);
+  const terminal = ["succeeded", "failed", "cancelled", "unknown", "awaiting_clarification"].includes(status);
+  const isActive = !terminal;
   const mutationClass: TaskMutationClass = task.mutationClass ?? "unknown";
   return {
     taskId: task.id,
-    status: task.status as TaskProjection["status"],
+    status,
     message: task.message,
     createdCardIds: task.createdCardIds ?? [],
     focusCardId: task.focusCardId,
+    step: task.step ?? 0,
+    executionId: task.executionId,
+    canvasVersion: task.canvasVersion,
     mutationClass,
     canSafelySupersede: isActive && mutationClass === "read_only",
     isActive,
     isTerminal: terminal,
-    needsFeedback: task.status === "awaiting_clarification" || task.status === "succeeded" || task.status === "failed",
+    needsFeedback: status === "awaiting_clarification" || status === "succeeded" || status === "failed",
   };
 }
 
@@ -67,4 +100,53 @@ export function isActiveTask(projection: TaskProjection): boolean {
 
 export function needsUserFeedback(projection: TaskProjection): boolean {
   return projection.needsFeedback;
+}
+
+/** Wire shape of a real Host decision-task status (`DecisionTaskStatusSchema`). */
+export interface DecisionTaskStatusLike {
+  id: string;
+  status: string;
+  step: number;
+  executionId?: string;
+  canvasVersion?: number;
+  reason?: string;
+  clarification?: { question: string };
+}
+
+/**
+ * Project a real `/api/intent` task status (the Host's decision protocol) into
+ * the read-only coordinator view. The receipt fields (`step`, `executionId`,
+ * `canvasVersion`) are carried through so the coordinator reasons about the
+ * Host's actual progress instead of a local guess.
+ */
+export function projectDecisionTask(
+  task: DecisionTaskStatusLike,
+  options: { message?: string; mutationClass?: TaskMutationClass; createdCardIds?: string[]; focusCardId?: string } = {},
+): TaskProjection {
+  const message = options.message ?? task.clarification?.question ?? task.reason ?? "";
+  return projectTask({
+    id: task.id,
+    status: task.status,
+    message,
+    createdCardIds: options.createdCardIds,
+    focusCardId: options.focusCardId,
+    step: task.step,
+    executionId: task.executionId,
+    canvasVersion: task.canvasVersion,
+    mutationClass: options.mutationClass,
+  });
+}
+
+/**
+ * True when `next` is older than `current` for the same task. Out-of-order
+ * responses (a slow earlier step landing after a newer one) must not regress the
+ * projection and re-open supersede decisions the Host has already settled.
+ */
+export function isStaleProjection(current: TaskProjection | null, next: TaskProjection): boolean {
+  if (!current) return false;
+  if (current.taskId !== next.taskId) return false;
+  if (next.step < current.step) return true;
+  // Same step: a terminal state must not be reopened by a duplicate in-flight frame.
+  if (next.step === current.step && current.isTerminal && !next.isTerminal) return true;
+  return false;
 }
