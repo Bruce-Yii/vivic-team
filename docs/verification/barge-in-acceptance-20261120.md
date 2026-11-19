@@ -51,7 +51,7 @@
 | 阶段 | p50 | p95 | 来源 |
 | --- | --- | --- | --- |
 | VAD 起音（配置 160ms，被 2048 sample = 128ms AudioWorklet 包量化） | 192ms（相位扫描）/ 256ms（帧对齐） | 250ms | 真实 `createSpeechSegmentDetector` + 真实帧长 |
-| duck 处理（压低音量，同步于起音） | 0.25ms | ~1.6ms（含该帧 ASR 转发） | 真实 worklet 回调计时 |
+| duck 处理（压低音量，同步于起音） | 0.25ms（起音帧） | 逐帧处理最大 1.6ms（含 ASR 转发） | 真实 worklet 回调计时 |
 | 用户说完 + hangover 提交（配置 500ms，帧量化 512ms） | 512ms | 512ms | 真实 detector 状态机 |
 | 语句剩余时长（播完这句话） | 1280ms | 2176ms | 20 条插话实测 voicedMs |
 | ASR 往返（commit → final，真实 StepFun） | 289ms | 913ms | 20 条实测（全 57 条 p50 309 / p95 524） |
@@ -80,3 +80,4 @@
 - `apps/web/src/ai/__tests__/bargeInDecision.test.ts`：在真实 `fullDuplex` 链路上锁住
   "起音 256ms 先 duck、不 commit 不停播 → hangover 后 commit → ASR final 才停播"，
   以及自回声忽略、`对` 这类 backchannel 不停播。
+
