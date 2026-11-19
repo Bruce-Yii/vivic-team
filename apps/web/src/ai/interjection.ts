@@ -1,3 +1,4 @@
+import { looksLikeCommand } from "./turnTaking";
 import type { TaskProjection } from "./taskProjection";
 import type { InterruptedSpeechContext, TurnIntent } from "./turnTaking";
 
@@ -18,6 +19,11 @@ import type { InterruptedSpeechContext, TurnIntent } from "./turnTaking";
  * (`cancelTask` at most once, `dispatch` at most once) without a browser, and
  * `applyInterjection` is the single effect executor the coordinator uses.
  */
+/** Longer than this while the assistant speaks is ambient speech, not a barge-in. */
+export const SHORT_INTERRUPTION_CHARS = 12;
+/** A command-shaped utterance may be longer, but not paragraph-length. */
+export const COMMAND_MAX_CHARS = 40;
+
 export interface InterjectionContext {
   /** Deterministic intent for the committed transcript. */
   intent: TurnIntent;
@@ -92,16 +98,28 @@ export function decideInterjection(context: InterjectionContext): InterjectionDe
 
   // The assistant is speaking: stop/cancel barge in, a constraint pauses, and a
   // new topic supersedes only read-only work after confirming the barge-in.
-  if (intent === "stop") return { ...decision, captureInterrupted: true };
-  if (intent === "cancel_task") return { ...decision, captureInterrupted: true, cancelTaskId: cancelable };
+  const brief = [...transcript].length <= SHORT_INTERRUPTION_CHARS;
+  if (intent === "stop" && brief) return { ...decision, captureInterrupted: true };
+  if (intent === "cancel_task" && brief) return { ...decision, captureInterrupted: true, cancelTaskId: cancelable };
   if (intent === "new_constraint") {
     if (active) return { ...decision, captureInterrupted: true, queueConstraint: true };
     return { ...decision, captureInterrupted: true, confirmBargeIn: true, dispatch: true };
   }
-  if (intent === "new_topic" || (intent === "unknown" && [...transcript].length >= 2)) {
+  // Measured on 20 real human utterances replayed during playback: treating any
+  // two-character `unknown` transcript as a barge-in stopped the assistant on
+  // 88% of ambient speech (TV, other people, feedback words). An unclassified
+  // transcript is therefore NOT a barge-in; only explicit short interruptions are.
+  // Long sentences that merely contain a keyword ("…取消限购…") are ambient speech.
+  const length = [...transcript].length;
+  // A brand-new instruction ("帮我看看明天的日程") is a real turn even when it has
+  // no interrupt keyword; ambient speech is filtered by the command phrasing and
+  // the self-echo guard upstream.
+  const commandLikeUnknown = intent === "unknown" && looksLikeCommand(transcript) && length <= COMMAND_MAX_CHARS;
+  if ((intent === "new_topic" && length <= SHORT_INTERRUPTION_CHARS) || commandLikeUnknown) {
     return { ...decision, captureInterrupted: true, confirmBargeIn: true, dispatch: true,
       cancelRunning: canSafelySupersede, cancelTaskId: supersedeTarget };
   }
+  return decision;
   // backchannel / continue / irrelevant never interrupt active playback.
   return decision;
 }

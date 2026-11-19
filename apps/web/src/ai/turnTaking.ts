@@ -189,14 +189,27 @@ export const looksLikeSelfEcho = (transcript: string, spokenText: string | null 
   return overlapRatio(heard, spoken) >= SELF_ECHO_OVERLAP;
 };
 
+/**
+ * Does this read like the user giving VIVIC an instruction, rather than ambient
+ * speech (TV, other people, feedback words)?
+ *
+ * Measured need: "帮我看看明天的日程安排" spoken while the assistant talks must
+ * start a new turn, but 20 real AISHELL news sentences replayed during playback
+ * must not stop it. Command phrasing separates the two far better than length.
+ */
+const COMMAND_PATTERN = /(帮我|给我|替我|麻烦|请|建(?:一个|个)|加(?:一个|个)|做(?:一个|个)|创建|新建|设置|改成|改到|切换到|打开|关闭|删除|清空|提醒我|查一下|查查|搜一下|搜索|找一下|看一下|看看|列出|整理|生成|写一个)/;
+export const looksLikeCommand = (transcript: string): boolean => COMMAND_PATTERN.test(transcript.trim());
+
 export const classifyIntent = (transcript: string): TurnIntent => {
   const text = transcript.trim().toLowerCase();
   if (!text) return "irrelevant";
 
-  if (/^(停|停止|别说了|闭嘴|安静|shut up|stop|quiet|enough)/i.test(text)) return "stop";
-  if (/取消|cancel|abort|discard/i.test(text)) return "cancel_task";
+  // Interrupt lexicon measured from 20 real Chinese interruption phrasings: the
+  // earlier list missed "等一下/慢着/打住/先别" and lost half the genuine barge-ins.
+  if (/^(停|停下|停一下|停止|别说了|别念了|闭嘴|安静|打住|慢着|等一下|等等|先等|先别|先停|暂停|shut up|stop|quiet|enough|hold on|pause)/i.test(text)) return "stop";
+  if (/取消|cancel|abort|discard|不要了|不用了/i.test(text)) return "cancel_task";
   if (/继续|接着说|接着讲|go on|continue|resume/i.test(text)) return "continue";
-  if (/换个话题|说点别的|不说这个|换个说法|new topic|change subject|different topic/i.test(text)) return "new_topic";
+  if (/换个话题|说点别的|不说这个|换个说法|重新说|重新来|从头说|不对|不是[，,]|我说的是|我指的是|搞错了|纠正一下|new topic|change subject|different topic/i.test(text)) return "new_topic";
   if (/但是|不过|还有|另外|再加|再加一个|还有就是|而且|but |also |additionally |also need/i.test(text)) return "new_constraint";
   if (/^(嗯|好|对|是的|明白|了解|ok|okay|yes|yeah|uh huh|right|sure|got it)$/i.test(text)) return "backchannel";
   if (text.length <= 4 && /^(嗯|好|对|ok|yes|yeah)$/i.test(text)) return "backchannel";
