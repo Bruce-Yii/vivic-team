@@ -35,12 +35,23 @@ export const CanvasContextSchema = z.strictObject({
 
 export type CanvasContext = z.infer<typeof CanvasContextSchema>;
 
+/** Optional truncated TTS context when the user interrupted an ongoing spoken reply. */
+export const InterruptedSpeechContextSchema = z.strictObject({
+  reason: z.enum(["voice", "ui"]),
+  requestId: z.string().max(128).nullable().optional(),
+  spokenText: z.string().max(200),
+  truncated: z.boolean(),
+  playedMs: z.number().finite().nonnegative().nullable().optional(),
+});
+
 export const IntentRequestSchema = z.strictObject({
   task: DecisionTaskRequestSchema.optional(),
   text: z.string().min(1).max(500),
   canvasContext: CanvasContextSchema,
   attachments: ImageAttachmentsSchema.optional(),
   continuation: z.strictObject({ utterance: z.string().min(1).max(500), question: z.string().min(1).max(180) }).optional(),
+  /** Present only when this turn interrupted active TTS playback; aligns spoken context. */
+  interruptedSpeech: InterruptedSpeechContextSchema.optional(),
   /** Sent by Control only for weather wording, rounded to ~1 km; never persisted by the API. */
   deviceLocation: DevicePositionSchema.optional(),
   /** Declarative definitions are untrusted data and revalidated/hash-checked by the planner. */

@@ -32,7 +32,7 @@ interface ChatPageProps {
   suggestions: string[];
   backendOnline: boolean | null;
   busy: boolean;
-  onSubmit: (text: string, attachments?: Attachment[], options?: { cancelRunning?: boolean }) => void;
+  onSubmit: (text: string, attachments?: Attachment[], options?: FullDuplexCommandOptions) => void;
   onPickClarify: (candidate: ResolvedCard) => void;
   onPreviewClarify: (candidate: ResolvedCard) => void;
   onCancelClarify: () => void;
@@ -59,7 +59,7 @@ export const ChatPage = ({ hidden, host, theme, feedback, notice, onOpenSettings
       const mergedText = options?.constraints?.length
         ? `${text}（补充约束：${options.constraints.join("；")}）`
         : text;
-      composer.onSubmit(mergedText, undefined, { cancelRunning: options?.cancelRunning });
+      composer.onSubmit(mergedText, undefined, options);
     });
     return () => setFullDuplexCommandHandler(null);
   }, [composer.onSubmit]);

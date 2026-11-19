@@ -18,6 +18,24 @@ export interface TaskProjection {
   needsFeedback: boolean;
 }
 
+const MUTATING_PATTERN =
+  /删|移除|清空|修改|编辑|更新|新建|创建|加个|添加|新增|提醒|倒计时|移动|固定|取消固定|撤销|重做|排序|整理|发送|预订|下单|保存|记一下|改(?:成|为|到|一下)/;
+const READ_ONLY_PATTERN =
+  /^(?:查|查询|查一下|搜|搜索|找|找一下|看|看看|看一下|聚焦|打开|显示全部|恢复视图|我在哪)|天气|多少度|航班|机票|酒店|景点|汇率|股价|新闻|介绍|是什么|怎么样/;
+
+/**
+ * Conservative client-side mutation classifier for in-flight utterances.
+ * Mutating keywords always win over read-only keywords (e.g. compound requests
+ * like "查天气然后删待办" stay protected as "mutating").
+ */
+export function inferTaskMutationClass(text: string): TaskMutationClass {
+  const trimmed = text.trim();
+  if (!trimmed) return "unknown";
+  if (MUTATING_PATTERN.test(trimmed)) return "mutating";
+  if (READ_ONLY_PATTERN.test(trimmed)) return "read_only";
+  return "unknown";
+}
+
 export function projectTask(task: {
   id: string;
   status: string;

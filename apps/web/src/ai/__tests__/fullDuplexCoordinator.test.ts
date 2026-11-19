@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AsrGatewayClient } from "../asrGatewayClient";
 import { createSpeechSegmentDetector, interruptByUi } from "../fullDuplex";
-import { projectTask } from "../taskProjection";
+import { inferTaskMutationClass, projectTask } from "../taskProjection";
 import {
   appendWorkingConstraint,
   buildInterruptedSpeechContext,
@@ -106,6 +106,14 @@ describe("write-operation safe cancellation boundary", () => {
     expect(classifyTaskCancellationSafety("mutating", true)).toBe("report_result_no_silent_drop");
     expect(classifyTaskCancellationSafety("unknown", true)).toBe("report_result_no_silent_drop");
     expect(classifyTaskCancellationSafety("unknown", false)).toBe("require_confirmation");
+  });
+
+  it("infers mutation class conservatively with mutating always taking precedence", () => {
+    expect(inferTaskMutationClass("查一下明天上海天气")).toBe("read_only");
+    expect(inferTaskMutationClass("聚焦会议记录")).toBe("read_only");
+    expect(inferTaskMutationClass("十分钟后提醒我喝水")).toBe("mutating");
+    expect(inferTaskMutationClass("查上海天气然后删除待办")).toBe("mutating");
+    expect(inferTaskMutationClass("帮我随便聊聊")).toBe("unknown");
   });
 });
 
