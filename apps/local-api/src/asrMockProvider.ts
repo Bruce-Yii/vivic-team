@@ -25,9 +25,16 @@ export interface MockAsrProviderConfig {
 
 export interface AsrProviderAdapter {
   start(config: MockAsrProviderConfig): void | Promise<void>;
-  sendAudio(chunk: Uint8Array): void;
+  /**
+   * Accepts one PCM frame. `ackToken` is an opaque, gateway-assigned marker for
+   * this frame; a provider that has consumed the frame must hand the same token
+   * back through the `onAudioConsumed` subscribers. Token identity keeps the
+   * ack channel independent of the provider's own frame counters, which resume
+   * (reset + a new transport connection) necessarily rewinds.
+   */
+  sendAudio(chunk: Uint8Array, ackToken?: number): void;
   reset(): void;
-  onAudioConsumed(cb: (seq?: number) => void): () => void;
+  onAudioConsumed(cb: (ackToken?: number) => void): () => void;
   commit(): void;
   cancel(): void;
   close(): void;
@@ -44,7 +51,7 @@ export class MockAsrProvider implements AsrProviderAdapter {
   private errorCb: AsrProviderCallbacks["onError"] | null = null;
   private endedCb: AsrProviderCallbacks["onEnded"] | null = null;
   private chunkCount = 0;
-  private consumedCbs = new Map<number, () => void>();
+  private consumedListeners = new Set<(ackToken?: number) => void>();
   private totalBytes = 0;
   private words: string[] = [];
   private cancelled = false;
@@ -69,7 +76,7 @@ export class MockAsrProvider implements AsrProviderAdapter {
     this.config = { ...this.config, ...config } as Required<MockAsrProviderConfig>;
   }
 
-  sendAudio(chunk: Uint8Array): void {
+  sendAudio(chunk: Uint8Array, ackToken?: number): void {
     if (this.cancelled) return;
     this.chunkCount += 1;
     this.totalBytes += chunk.byteLength;
@@ -85,14 +92,10 @@ export class MockAsrProvider implements AsrProviderAdapter {
     }
     if (this.partialTimer) clearTimeout(this.partialTimer);
     this.partialTimer = setTimeout(() => this.emitPartial(), this.config.partialDelayMs);
-    // Trigger consumed callback for this chunk (per-chunk ack)
-    const cb = this.consumedCbs.get(this.chunkCount);
-    if (cb) {
-      cb();
-      this.consumedCbs.delete(this.chunkCount);
-    } else if (this.consumedCbs.size === 0) {
-      // Fallback for providers that don't register per-chunk
-    }
+    // Consumption is reported with the gateway's token; the local chunkCount is
+    // only used for mock partial text and never as the ack key.
+    const token = ackToken ?? this.chunkCount;
+    for (const cb of [...this.consumedListeners]) cb(token);
   }
 
   private emitPartial(): void {
@@ -139,11 +142,10 @@ export class MockAsrProvider implements AsrProviderAdapter {
     this.cancelled = false;
   }
 
-  onAudioConsumed(cb: (seq?: number) => void): () => void {
-    const seq = this.chunkCount + 1; // next chunk's seq
-    this.consumedCbs.set(seq, () => cb(seq));
+  onAudioConsumed(cb: (ackToken?: number) => void): () => void {
+    this.consumedListeners.add(cb);
     return () => {
-      this.consumedCbs.delete(seq);
+      this.consumedListeners.delete(cb);
     };
   }
 

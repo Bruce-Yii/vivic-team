@@ -47,6 +47,13 @@ export interface AsrGatewayOptions {
   authenticate?: (request: Request) => Promise<AsrAuthResult> | AsrAuthResult;
 }
 
+interface PendingAck {
+  seq: number;
+  bytes: number;
+  epoch: number;
+  timer: ReturnType<typeof setTimeout>;
+}
+
 interface Session {
   sessionId: string;
   createdAt: number;
@@ -68,12 +75,24 @@ interface Session {
   endedReason?: string;
   seenSeqs: Set<number>;
   expectedSeq: number;
+  /**
+   * Monotonic per-session marker handed to the provider with every frame. Acks
+   * are matched by token, never by sequence number or provider-side counters:
+   * after a resume the sequence is rebased while the provider's own frame count
+   * keeps its own history.
+   */
+  ackToken: number;
+  pendingAcks: Map<number, PendingAck>;
   /** Bumped on every accepted resume so timers from the previous connection go inert. */
   epoch: number;
   finalSent: boolean;
   endedSent: boolean;
+  unsubscribeAudioConsumed?: () => void;
   timers: { maxDuration?: ReturnType<typeof setTimeout>; idle?: ReturnType<typeof setTimeout>; grace?: ReturnType<typeof setTimeout>; finalize?: ReturnType<typeof setTimeout> };
 }
+
+/** How long a provider may take to report one frame as consumed before it is rolled back. */
+const ACK_TIMEOUT_MS = 500;
 
 export class AsrGateway {
   private sessions = new Map<string, Session>();
@@ -175,12 +194,22 @@ export class AsrGateway {
       timers: {},
       seenSeqs: new Set(),
       expectedSeq: 0,
-    epoch: 0,
+      ackToken: 0,
+      pendingAcks: new Map(),
+      epoch: 0,
       finalSent: false,
       endedSent: false,
-    };    this.sessions.set(sessionId, session);
+    };
+    this.sessions.set(sessionId, session);
     this.socketToSession.set(socket, sessionId);
     session.state = AsrSessionState.Active;
+
+    // One durable subscription per session: the provider echoes the gateway's
+    // per-frame token, so a resume that rewinds the provider's counters cannot
+    // mis-associate an ack with the wrong frame.
+    if (typeof provider.onAudioConsumed === "function") {
+      session.unsubscribeAudioConsumed = provider.onAudioConsumed((token) => this.handleAudioConsumed(session, token));
+    }
 
     provider.onPartial((p) => {
       if (session.state !== AsrSessionState.Active && session.state !== AsrSessionState.Finalizing) return;
@@ -291,6 +320,63 @@ export class AsrGateway {
     session.timers.idle = undefined;
     session.timers.finalize = undefined;
     if (!keepGrace) session.timers.grace = undefined;
+    this.dropPendingAcks(session);
+  }
+
+  /**
+   * Forgets in-flight per-frame acks without rolling the sequence back. Used when
+   * the stream is over (ended, commit, resume): the old connection's frames are
+   * either consumed or gone, and the resumed stream is sequenced independently.
+   */
+  private dropPendingAcks(session: Session): void {
+    for (const pending of session.pendingAcks.values()) clearTimeout(pending.timer);
+    session.pendingAcks.clear();
+    session.bufferedChunks = 0;
+    session.bufferedBytes = 0;
+  }
+
+  private handleAudioConsumed(session: Session, token?: number): void {
+    if (typeof token !== "number") return;
+    const pending = session.pendingAcks.get(token);
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    session.pendingAcks.delete(token);
+    session.bufferedChunks = Math.max(0, session.bufferedChunks - 1);
+    session.bufferedBytes = Math.max(0, session.bufferedBytes - pending.bytes);
+    if (session.endedSent) return;
+    this.send(session.socket, {
+      type: "chunk.ack",
+      sessionId: session.sessionId,
+      seq: pending.seq,
+      bufferedChunks: session.bufferedChunks,
+      bufferedBytes: session.bufferedBytes,
+    });
+  }
+
+  private handleAckTimeout(session: Session, token: number): void {
+    const pending = session.pendingAcks.get(token);
+    if (!pending) return;
+    session.pendingAcks.delete(token);
+    session.bufferedChunks = Math.max(0, session.bufferedChunks - 1);
+    session.bufferedBytes = Math.max(0, session.bufferedBytes - pending.bytes);
+    // A timer from a dropped connection must not touch the reason the resumed
+    // stream is rebased; only the connection that owned the frame may roll it back.
+    if (session.epoch !== pending.epoch) return;
+    session.seenSeqs.delete(pending.seq);
+    // Only rewind when this frame was the tail of the accepted stream; a later
+    // accepted frame means the gap is real and cannot be closed by renumbering.
+    if (session.expectedSeq === pending.seq + 1) {
+      session.expectedSeq = pending.seq;
+    }
+    this.send(session.socket, {
+      type: "error",
+      code: AsrErrorCode.ProviderError,
+      message: "provider did not acknowledge audio consumption within timeout",
+      sessionId: session.sessionId,
+      seq: pending.seq,
+      retryable: true,
+      fatal: false,
+    });
   }
 
   private startGrace(session: Session): void {
@@ -301,6 +387,7 @@ export class AsrGateway {
       if (sid === session.sessionId) this.socketToSession.delete(sock);
     }
     session.timers.grace = setTimeout(() => {
+      session.unsubscribeAudioConsumed?.();
       this.sessions.delete(session.sessionId);
     }, session.graceMs);
   }
@@ -360,7 +447,7 @@ export class AsrGateway {
     const isCurrentSocket = (session: Session) => session.socket === socket || this.socketToSession.get(socket) === session.sessionId;
     const withinGrace = (session: Session) => this.now() - session.lastActivity <= session.graceMs;
     const disconnected = (session: Session) => session.socket === null || !session.socket.isOpen();
-    const allowRebind = (session: Session) => ownsIdentity(session) && !isCurrentSocket(session) && withinGrace(session) && disconnected(session);
+    const allowRebind = (session: Session) => ownsIdentity(session) && !isCurrentSocket(session) && !session.endedSent && !session.cancelled && withinGrace(session) && disconnected(session);
     const bindSocket = (session: Session) => {
       session.socket = socket;
       this.socketToSession.set(socket, session.sessionId);
@@ -368,6 +455,7 @@ export class AsrGateway {
         clearTimeout(session.timers.grace);
         session.timers.grace = undefined;
       }
+      session.lastActivity = this.now();
       session.state = AsrSessionState.Active;
       if (typeof session.provider.reset === "function") session.provider.reset();
       this.resetIdle(session);
@@ -393,7 +481,7 @@ export class AsrGateway {
             return;
           }
           const age = this.now() - existing.lastActivity;
-          if (existing.cancelled || age > existing.graceMs) {
+          if (existing.cancelled || existing.endedSent || age > existing.graceMs) {
             this.send(socket, { type: "error", code: AsrErrorCode.SessionNotFound, message: "session expired", sessionId: msg.resumeSessionId, fatal: true });
             return;
           }
@@ -402,9 +490,11 @@ export class AsrGateway {
           // The reconnecting client tells us where its numbering resumes. Without this
           // rebase the gateway kept the pre-drop expectedSeq while the client restarted
           // at 0 (or continued elsewhere), so every frame was rejected as out-of-order.
-          // Invalidate ack timers left over from the dropped connection: their expiry
-          // path rolls expectedSeq back, which would desync the resumed stream.
+          // In-flight acks from the dropped connection are dropped here (no rollback):
+          // their frames belong to the old numbering and the provider keeps its own
+          // consumption state across the reset.
           session.epoch += 1;
+          this.dropPendingAcks(session);
           if (typeof msg.resumeSeq === "number") {
             session.expectedSeq = msg.resumeSeq;
             session.seenSeqs.clear();
@@ -423,13 +513,14 @@ export class AsrGateway {
             }
             this.clearTimers(existingById, false);
             try { existingById.provider.close(); } catch { /* ignore */ }
+            existingById.unsubscribeAudioConsumed?.();
             this.sessions.delete(msg.sessionId);
           }
           session = this.createSession(msg, auth, socket);
-        if (session.state === AsrSessionState.Ended) {
-          // Provider start failed; session.started not sent (error+ended already sent in createSession)
-          return;
-        }
+          if (session.state === AsrSessionState.Ended) {
+            // Provider start failed; session.started not sent (error+ended already sent in createSession)
+            return;
+          }
         } else {
           session.socket = socket;
           this.socketToSession.set(socket, session.sessionId);
@@ -555,57 +646,22 @@ export class AsrGateway {
         session.receivedBytes += bytes;
         session.seenSeqs.add(msg.seq);
         session.expectedSeq += 1;
-        let consumed = false;
-        // Per-chunk ack: single callback registered ONCE, handling both sync and async.
-        // Timer is cleared when consumption is signalled; timeout sends error (not false ACK).
-        const epoch = session.epoch;
-        const timer = setTimeout(() => {
-          if (consumed) return;
-          consumed = true;
-          // The connection that owned this frame is gone; the resumed stream uses a
-          // rebased sequence, so rolling back now would desync it permanently.
-          if (session.epoch !== epoch) return;
-          session.bufferedChunks = Math.max(0, session.bufferedChunks - 1);
-          session.bufferedBytes = Math.max(0, session.bufferedBytes - bytes);
-          session.seenSeqs.delete(msg.seq);
-          session.expectedSeq = Math.max(0, session.expectedSeq - 1);
-          this.send(socket, {
-            type: "error",
-            code: AsrErrorCode.ProviderError,
-            message: "provider did not acknowledge audio consumption within timeout",
-            sessionId: session.sessionId,
-            seq: msg.seq,
-            retryable: true,
-            fatal: false,
-          });
-        }, 500);
-        const ack = () => {
-          if (consumed) return;
-          consumed = true;
-          clearTimeout(timer);
-          session.bufferedChunks = Math.max(0, session.bufferedChunks - 1);
-          session.bufferedBytes = Math.max(0, session.bufferedBytes - bytes);
-          this.send(socket, {
-            type: "chunk.ack",
-            sessionId: session.sessionId,
-            seq: msg.seq,
-            bufferedChunks: session.bufferedChunks,
-            bufferedBytes: session.bufferedBytes,
-          });
-        };
-        let unsub: (() => void) | undefined;
-        if (typeof session.provider.onAudioConsumed === "function") {
-          unsub = session.provider.onAudioConsumed(() => ack());
-        }
+        // Per-chunk ack by gateway token: the frame is registered under a token that
+        // the provider echoes once it has consumed the audio. Neither a rebased
+        // sequence (resume) nor a rewound provider counter can mis-associate an ack.
+        const token = (session.ackToken += 1);
+        const timer = setTimeout(() => this.handleAckTimeout(session, token), ACK_TIMEOUT_MS);
+        session.pendingAcks.set(token, { seq: msg.seq, bytes, epoch: session.epoch, timer });
         try {
-          session.provider.sendAudio(audioBuffer);
+          session.provider.sendAudio(audioBuffer, token);
         } catch (err) {
-          if (unsub) unsub();
-          clearTimeout(timer);
+          const pending = session.pendingAcks.get(token);
+          if (pending) clearTimeout(pending.timer);
+          session.pendingAcks.delete(token);
           session.bufferedChunks = Math.max(0, session.bufferedChunks - 1);
           session.bufferedBytes = Math.max(0, session.bufferedBytes - bytes);
           session.seenSeqs.delete(msg.seq);
-          session.expectedSeq = Math.max(0, session.expectedSeq - 1);
+          if (session.expectedSeq === msg.seq + 1) session.expectedSeq = msg.seq;
           this.send(socket, {
             type: "error",
             code: AsrErrorCode.Backpressure,
@@ -617,11 +673,6 @@ export class AsrGateway {
           });
           return;
         }
-        // If consumed during sendAudio (sync), ack already fired and timer cleared by ack()
-        if (consumed) {
-          if (unsub) unsub();
-        }
-        // If not consumed yet, timer will handle timeout or async callback will fire ack
         break;
       }
       case "cancel": {
@@ -709,6 +760,7 @@ export class AsrGateway {
     this.clearTimers(session, true);
     try { session.provider.close(); } catch { /* ignore */ }
     session.timers.grace = setTimeout(() => {
+      session.unsubscribeAudioConsumed?.();
       this.sessions.delete(session.sessionId);
     }, session.graceMs);
   }
@@ -725,6 +777,7 @@ export class AsrGateway {
     for (const session of this.sessions.values()) {
       this.clearTimers(session, false);
       try { session.provider.close(); } catch { /* ignore */ }
+      session.unsubscribeAudioConsumed?.();
     }
     this.sessions.clear();
     this.socketToSession.clear();
