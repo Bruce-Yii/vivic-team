@@ -10,6 +10,10 @@ dist-online/
 # local cleanup window runtime data (sqlite space store; never commit)
 .local-data/
 
+# Playwright run artifacts (CI uploads them as failure evidence, never commits)
+test-results/
+evidence/
+
 # server web release artifact (845MB) - archived separately, not in git
 server-web-release/
 

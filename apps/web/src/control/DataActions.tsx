@@ -16,10 +16,34 @@ interface DataActionsProps {
 export const DataActions = ({ host, readonly, onBeforeClear, compact = false }: DataActionsProps) => {
   const snapshot = useSyncExternalStore(host.subscribe, host.getSnapshot);
   const [message, setMessage] = useState<string | null>(null);
-  const [clearing, setClearing] = useState(false), [deletingSpace, setDeletingSpace] = useState(false);
+  const [clearing, setClearing] = useState(false), [deletingSpace, setDeletingSpace] = useState(false), [clearingCanvas, setClearingCanvas] = useState(false);
   const deleteTarget = useRef<{ canvasId: string; ownerId: string | null } | null>(null);
-  const disabled = readonly || clearing || deletingSpace;
+  const clearTarget = useRef<{ canvasId: string; ownerId: string | null } | null>(null);
+  const disabled = readonly || clearing || clearingCanvas || deletingSpace;
   const DangerGroup = compact ? "details" : "div";
+
+  /** Never clear whichever Space happens to be active when the confirmation settles:
+   * the dialog captured one Space and one owner, and the result is reported only
+   * after the cleared version is durably persisted. */
+  const clearCurrentSpace = async () => {
+    const target = clearTarget.current;
+    clearTarget.current = null;
+    const current = host.getSnapshot();
+    if (!target || current.activeCanvasId !== target.canvasId || current.ownerId !== target.ownerId || current.ownerMode !== "owner") {
+      setMessage("画布或控制权已变化，未清空"); return;
+    }
+    const version = current.canvases.find(canvas => canvas.id === target.canvasId)?.version;
+    setClearingCanvas(true); onBeforeClear(); setMessage(null);
+    try {
+      host.clearActiveCanvas();
+      const cleared = host.getSnapshot().canvases.find(canvas => canvas.id === target.canvasId)?.version;
+      if (version === undefined || cleared === undefined || cleared <= version) throw new Error("clear_unconfirmed");
+      await host.flush(target.canvasId, cleared);
+      setMessage("已清空并保存当前画布");
+    } catch {
+      setMessage("清空结果待确认");
+    } finally { setClearingCanvas(false); }
+  };
 
   const clearLocalData = async () => {
     if (disabled) return;
@@ -74,13 +98,11 @@ export const DataActions = ({ host, readonly, onBeforeClear, compact = false }: 
           description="当前画布上的全部卡片将被删除。"
           confirmLabel="清空"
           disabled={disabled}
-          onConfirm={() => {
-            host.clearActiveCanvas();
-            setMessage("已清空当前画布");
-          }}
+          onConfirm={() => void clearCurrentSpace()}
           trigger={
-            <Button variant="secondary" size="sm" disabled={disabled} data-vivic-clear-canvas>
-              清空此画布
+            <Button variant="secondary" size="sm" disabled={disabled} data-vivic-clear-canvas
+              onClick={() => { const now = host.getSnapshot(); if (now.activeCanvasId) clearTarget.current = { canvasId: now.activeCanvasId, ownerId: now.ownerId }; }}>
+              {clearingCanvas ? "正在清空…" : "清空此画布"}
             </Button>
           }
         />

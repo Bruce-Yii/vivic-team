@@ -42,7 +42,10 @@ export const DisplayApp = () => {
   }, () => false);
   const [hasHydratedRequestedCanvas, setHasHydratedRequestedCanvas] = useState(false);
   const [minimumLoadingTimeElapsed, setMinimumLoadingTimeElapsed] = useState(false);
-  const loadingLeaving = hasHydratedRequestedCanvas && minimumLoadingTimeElapsed;
+  const [loadingDismissed, setLoadingDismissed] = useState(false);
+  // A standalone /display without ?canvasId is the standby orb: it has no owner
+  // snapshot to hydrate, so it must reveal itself once the entry delay elapses.
+  const loadingLeaving = minimumLoadingTimeElapsed && (hasHydratedRequestedCanvas || !pinnedCanvasId);
 
   useEffect(() => {
     if (requestedCanvasReady) setHasHydratedRequestedCanvas(true);
@@ -52,6 +55,14 @@ export const DisplayApp = () => {
     const timer = window.setTimeout(() => setMinimumLoadingTimeElapsed(true), 1200);
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!loadingLeaving) return;
+    // Remove the overlay after its exit transition so it can never intercept
+    // the standby controls or leak its status text into the display.
+    const timer = window.setTimeout(() => setLoadingDismissed(true), 360);
+    return () => window.clearTimeout(timer);
+  }, [loadingLeaving]);
 
   useEffect(() => {
     let runtime: DisplayRuntime | undefined;
@@ -80,7 +91,7 @@ export const DisplayApp = () => {
       <FileScopeContext value={fileCanvasId}><StageRoot /></FileScopeContext>
       <FullscreenHint />
       {isDevPanel && <DevPanel />}
-      <div
+      {!loadingDismissed && <div
         className="vivic-space-loading"
         data-state={loadingLeaving ? "leaving" : "loading"}
         role="status"
@@ -90,7 +101,7 @@ export const DisplayApp = () => {
         <div className="vivic-space-loading-content">
           <span>正在加载</span>
         </div>
-      </div>
+      </div>}
     </div>
   );
 };

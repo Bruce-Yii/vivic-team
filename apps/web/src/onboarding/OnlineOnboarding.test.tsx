@@ -53,11 +53,11 @@ describe("online onboarding through user events, with all provider requests mock
   it("allows skipping the example, then enters explicitly limited basic mode without sending anything", async () => {
     await render(); await click("继续");
     expect(getProvidersStatus).toHaveBeenCalledTimes(1);
-    expect(container.querySelector("h1")?.textContent).toBe("连接在线服务");
+    expect(container.querySelector("h1")?.textContent).toBe("配置 API Key");
     await click("先体验基础功能");
-    expect(container.textContent).toContain("内置文字指令");
+    expect(container.textContent).toContain("先用输入框和现有卡片开始");
     expect(container.querySelector('input[type="checkbox"]')).toBeNull();
-    await click("开始聊天");
+    await click("开始使用");
     expect(props.onComplete).toHaveBeenCalledExactlyOnceWith(undefined);
     expect(selectLlmProvider).not.toHaveBeenCalled();
   });
@@ -69,7 +69,7 @@ describe("online onboarding through user events, with all provider requests mock
     await click("继续");
     expect(props.onComplete).not.toHaveBeenCalled();
     await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
-    await act(async () => { button("开始聊天").click(); button("开始聊天").click(); });
+    await act(async () => { button("开始使用").click(); button("开始使用").click(); });
     expect(props.onComplete).toHaveBeenCalledExactlyOnceWith(ONLINE_STARTER_DRAFT);
     expect(validateStepfunKey).not.toHaveBeenCalled();
     expect(selectLlmProvider).not.toHaveBeenCalled();
@@ -77,7 +77,7 @@ describe("online onboarding through user events, with all provider requests mock
 
   it("does not silently add a draft when the optional first instruction is unchecked", async () => {
     vi.mocked(getProvidersStatus).mockResolvedValue(status(true));
-    await render(); await click("继续"); await click("继续"); await click("开始聊天");
+    await render(); await click("继续"); await click("继续"); await click("开始使用");
     expect(props.onComplete).toHaveBeenCalledExactlyOnceWith(undefined);
   });
 
@@ -150,7 +150,7 @@ describe("online onboarding through user events, with all provider requests mock
     const check = deferred<ProvidersStatusResponse>(); vi.mocked(getProvidersStatus).mockReturnValueOnce(check.promise);
     await render(); await click("继续"); await click("返回");
     await act(async () => check.resolve(status(true)));
-    expect(container.querySelector("h1")?.textContent).toBe("聊天与 Space");
+    expect(container.querySelector("h1")?.textContent).toBe("Vivic 是什么");
     await click("继续");
     expect(getProvidersStatus).toHaveBeenCalledTimes(2); expect(container.textContent).not.toContain("已连接");
   });

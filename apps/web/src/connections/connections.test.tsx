@@ -20,7 +20,7 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 
 describe("connected service UI", () => {
   it("uses a natural-language question by default", async () => {
-    await act(async () => root.render(<ConnectionQueryPanel />)); await act(async () => button("查询资料").click());
+    await act(async () => root.render(<ConnectionQueryPanel />)); await act(async () => button("选择已连接").click());
     const textarea = document.body.querySelector<HTMLTextAreaElement>('textarea[aria-label="资料查询问题"]')!;
     await act(async () => { Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(textarea, "这个月有什么活动？"); textarea.dispatchEvent(new Event("input", { bubbles: true })); });
     await act(async () => button("查询").click());
@@ -31,7 +31,7 @@ describe("connected service UI", () => {
   it("keeps query collapsed until requested, then queries the selected read tool and saves only on user click", async () => {
     const save = vi.fn(); await act(async () => root.render(<ConnectionQueryPanel onSave={save} />));
     expect(fetch).not.toHaveBeenCalled();
-    await act(async () => button("查询资料").click());
+    await act(async () => button("选择已连接").click());
     await act(async () => button("指定查询").click());
     const queryCall = vi.mocked(fetch).mock.calls.find(call => String(call[0]).endsWith("/query"));
     expect(JSON.parse(String(queryCall?.[1]?.body))).toEqual({ provider: "mcdonalds", tool: "campaign-calendar", args: {} });
@@ -40,7 +40,7 @@ describe("connected service UI", () => {
   });
   it("does not report saved when durable host save fails or throws synchronously", async () => {
     await act(async () => root.render(<ConnectionQueryPanel onSave={() => { throw new Error("save failed"); }} />));
-    await act(async () => button("查询资料").click()); await act(async () => button("指定查询").click()); await act(async () => button("保存为卡片").click());
+    await act(async () => button("选择已连接").click()); await act(async () => button("指定查询").click()); await act(async () => button("保存为卡片").click());
     expect(document.body.textContent).toContain("卡片未保存"); expect(button("保存为卡片").disabled).toBe(false);
   });
   it("clears typed credentials on settings close and sends no auth until explicitly connected", async () => {
