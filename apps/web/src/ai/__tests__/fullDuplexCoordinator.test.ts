@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { serializeInterruptedSpeech } from "../api";
 import { AsrGatewayClient } from "../asrGatewayClient";
 import { createSpeechSegmentDetector, interruptByUi } from "../fullDuplex";
 import { inferTaskMutationClass, projectTask } from "../taskProjection";
@@ -66,6 +67,14 @@ describe("buildInterruptedSpeechContext (playback truncation accounting)", () =>
       reason: "voice",
       requestId: "req-1",
       fullText: "明天下午有三班直飞上海，最低六百八十元。",
+      spokenText: "明天下午有三班直",
+      truncated: true,
+      playedMs: 900,
+    });
+    // Wire serializer must strip client-only keys (`interrupted`, `fullText`) for z.strictObject
+    expect(serializeInterruptedSpeech(ctx!)).toEqual({
+      reason: "voice",
+      requestId: "req-1",
       spokenText: "明天下午有三班直",
       truncated: true,
       playedMs: 900,
