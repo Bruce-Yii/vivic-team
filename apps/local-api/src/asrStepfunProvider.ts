@@ -47,7 +47,7 @@ export class StepfunAsrProvider implements AsrProviderAdapter {
   private finalCb: AsrProviderCallbacks["onFinal"] | null = null;
   private errorCb: AsrProviderCallbacks["onError"] | null = null;
   private endedCb: AsrProviderCallbacks["onEnded"] | null = null;
-  private consumedCbs = new Map<number, () => void>();
+  private consumedListeners = new Set<(ackToken?: number) => void>();
   private backend: StepfunAsrBackend | null = null;
   private language = "zh";
   private chunks: Uint8Array[] = [];
@@ -71,10 +71,17 @@ export class StepfunAsrProvider implements AsrProviderAdapter {
     }
     this.backend = resolved;
     this.language = config.language ?? "zh";
-    this.reset();
+    // A fresh session starts a fresh utterance; only `reset()` (transport resume)
+    // reopens the provider while deliberately keeping already-collected audio.
+    this.cancelled = false;
+    this.closed = false;
+    this.chunks = [];
+    this.chunkCount = 0;
+    this.totalBytes = 0;
+    this.abortController = null;
   }
 
-  sendAudio(chunk: Uint8Array): void {
+  sendAudio(chunk: Uint8Array, ackToken?: number): void {
     if (this.cancelled || this.closed) return;
     if (this.totalBytes + chunk.byteLength > MAX_ASR_PCM_BYTES) {
       throw new Error(AsrErrorCode.Backpressure);
@@ -82,25 +89,24 @@ export class StepfunAsrProvider implements AsrProviderAdapter {
     this.chunkCount += 1;
     this.totalBytes += chunk.byteLength;
     this.chunks.push(new Uint8Array(chunk));
-    const cb = this.consumedCbs.get(this.chunkCount);
-    if (cb) {
-      cb();
-      this.consumedCbs.delete(this.chunkCount);
-    }
+    const token = ackToken ?? this.chunkCount;
+    for (const cb of [...this.consumedListeners]) cb(token);
   }
 
+  /**
+   * Reopens the provider for a resumed transport connection while keeping the
+   * audio already buffered before the drop: a resumed turn is the same utterance
+   * and must still transcribe the prefix when the client commits the tail.
+   */
   reset(): void {
     this.cancelled = false;
-    this.chunks = [];
-    this.chunkCount = 0;
-    this.totalBytes = 0;
+    this.closed = false;
   }
 
-  onAudioConsumed(cb: (seq?: number) => void): () => void {
-    const seq = this.chunkCount + 1;
-    this.consumedCbs.set(seq, () => cb(seq));
+  onAudioConsumed(cb: (ackToken?: number) => void): () => void {
+    this.consumedListeners.add(cb);
     return () => {
-      this.consumedCbs.delete(seq);
+      this.consumedListeners.delete(cb);
     };
   }
 
@@ -292,7 +298,9 @@ export class StepfunAsrProvider implements AsrProviderAdapter {
     this.closed = true;
     this.cancelled = true;
     this.abortController?.abort();
-    this.chunks = [];
+    // Buffered PCM is intentionally kept: a dropped transport may resume within
+    // the gateway grace window and commit the whole utterance. `reset()` reopens
+    // the provider; the session is deleted from the gateway once grace expires.
   }
 
   onPartial(cb: AsrProviderCallbacks["onPartial"]): void {

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { randomUUID } from "node:crypto";
 import { Buffer } from "node:buffer";
 import { createAsrGateway } from "../src/asrGateway.js";
+import type { AsrProviderAdapter } from "../src/asrMockProvider.js";
 import { ASR_BACKPRESSURE_MAX_CHUNKS } from "@vivic/contracts";
 
 class FakeSocket {
@@ -112,6 +113,48 @@ describe("ASR gateway reconnection", () => {
     expect(started.resume).toBe(true);
   });
 });
+describe("ASR resume sequence rebase", () => {
+  it("accepts frames after resume when the client rebases its sequence", () => {
+    const gw = createAsrGateway({ limits: { graceMs: 1000, idleTimeoutMs: 100000 } });
+    const auth = { ok: true, accountId: "acct-r", deviceId: "dev-r" };
+    const sid = randomUUID();
+    const sock1 = new FakeSocket();
+    gw.attach(sock1, auth);
+    sock1.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT }, mock: { finalDelayMs: 10 } });
+    // Three frames delivered before the drop.
+    for (const seq of [0, 1, 2]) sock1.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq, audio: PCM(100) });
+    sock1.close(1000, "drop");
+
+    const sock2 = new FakeSocket();
+    gw.attach(sock2, auth);
+    // Reconnect and continue from seq 3 without replaying 0..2.
+    sock2.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT }, resumeSessionId: sid, resumeSeq: 3, mock: { finalDelayMs: 10 } });
+    sock2.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq: 3, audio: PCM(100) });
+
+    const ack = sock2.sent.find((m) => m.type === "chunk.ack" && m.seq === 3);
+    expect(ack).toBeTruthy();
+    expect(sock2.sent.some((m) => m.type === "error")).toBe(false);
+  });
+
+  it("rebases even when the client restarts numbering at zero", () => {
+    const gw = createAsrGateway({ limits: { graceMs: 1000, idleTimeoutMs: 100000 } });
+    const auth = { ok: true, accountId: "acct-z", deviceId: "dev-z" };
+    const sid = randomUUID();
+    const sock1 = new FakeSocket();
+    gw.attach(sock1, auth);
+    sock1.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT }, mock: { finalDelayMs: 10 } });
+    for (const seq of [0, 1, 2, 3]) sock1.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq, audio: PCM(100) });
+    sock1.close(1000, "drop");
+
+    const sock2 = new FakeSocket();
+    gw.attach(sock2, auth);
+    sock2.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT }, resumeSessionId: sid, resumeSeq: 0, mock: { finalDelayMs: 10 } });
+    sock2.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq: 0, audio: PCM(100) });
+
+    expect(sock2.sent.find((m) => m.type === "chunk.ack" && m.seq === 0)).toBeTruthy();
+  });
+});
+
 describe("ASR gateway reconnection audio", () => {
   it("binds a new socket within grace and acks audio", () => {
     const gw = createAsrGateway({ limits: { graceMs: 1000, idleTimeoutMs: 100000 } });
@@ -150,5 +193,101 @@ describe("ASR gateway reconnection audio", () => {
     sock3.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq: 0, audio: PCM(100) });
     const opErr = sock3.sent.find((m) => m.type === "error" && (m.code === "asr-unauthorized" || m.code === "session-not-found"));
     expect(opErr).toBeTruthy();
+  });
+});
+
+/**
+ * Mimics StepfunAsrProvider: `reset()` (called on resume) rewinds the provider's
+ * own frame counter to zero while the gateway keeps its rebased sequence. Acks
+ * must therefore travel by token, not by ordinal.
+ */
+class RewindingProvider implements AsrProviderAdapter {
+  private listeners = new Set<(ackToken?: number) => void>();
+  private finalCb: ((payload: { text: string }) => void) | null = null;
+  start(): void {}
+  sendAudio(_chunk: Uint8Array, ackToken?: number): void {
+    for (const cb of [...this.listeners]) cb(ackToken);
+  }
+  reset(): void {}
+  onAudioConsumed(cb: (ackToken?: number) => void): () => void {
+    this.listeners.add(cb);
+    return () => { this.listeners.delete(cb); };
+  }
+  commit(): void { this.finalCb?.({ text: "resumed-final" }); }
+  cancel(): void {}
+  close(): void {}
+  onPartial(): void {}
+  onFinal(cb: (payload: { text: string }) => void): void { this.finalCb = cb; }
+  onError(): void {}
+  onEnded(): void {}
+}
+
+/** Drops the consumption signal for the frame that was in flight when the socket died. */
+class LostFrameProvider extends RewindingProvider {
+  private lost = true;
+  sendAudio(chunk: Uint8Array, ackToken?: number): void {
+    if (this.lost) {
+      this.lost = false;
+      return;
+    }
+    super.sendAudio(chunk, ackToken);
+  }
+}
+
+describe("ASR resume ack semantics", () => {
+  it("acks resumed frames by token even when the provider rewinds its counters", () => {
+    const gw = createAsrGateway({
+      providerFactory: () => new RewindingProvider(),
+      limits: { graceMs: 5000, idleTimeoutMs: 100000 },
+    });
+    const auth = { ok: true, accountId: "acct-tok", deviceId: "dev-tok" };
+    const sid = randomUUID();
+    const sock1 = new FakeSocket();
+    gw.attach(sock1, auth);
+    sock1.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT } });
+    for (const seq of [0, 1]) sock1.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq, audio: PCM(100) });
+    expect(sock1.sent.filter((m) => m.type === "chunk.ack" && m.seq === 1)).toHaveLength(1);
+    sock1.close(1000, "drop");
+
+    const sock2 = new FakeSocket();
+    gw.attach(sock2, auth);
+    sock2.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT }, resumeSessionId: sid, resumeSeq: 2 });
+    sock2.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq: 2, audio: PCM(100) });
+    sock2.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq: 3, audio: PCM(100) });
+
+    expect(sock2.sent.find((m) => m.type === "chunk.ack" && m.seq === 2)).toBeTruthy();
+    expect(sock2.sent.find((m) => m.type === "chunk.ack" && m.seq === 3)).toBeTruthy();
+    expect(sock2.sent.some((m) => m.type === "error")).toBe(false);
+
+    sock2.emitMessage({ type: "session.end", protocolVersion: "vivic-asr-protocol@1", sessionId: sid });
+    expect(sock2.sent.find((m) => m.type === "final")?.text).toBe("resumed-final");
+    gw.dispose();
+  });
+
+  it("does not roll the resumed sequence back when the dropped frame's ack never arrives", async () => {
+    const gw = createAsrGateway({
+      providerFactory: () => new LostFrameProvider(),
+      limits: { graceMs: 5000, idleTimeoutMs: 100000 },
+    });
+    const auth = { ok: true, accountId: "acct-lost", deviceId: "dev-lost" };
+    const sid = randomUUID();
+    const sock1 = new FakeSocket();
+    gw.attach(sock1, auth);
+    sock1.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT } });
+    // This frame is accepted but the provider never reports it as consumed.
+    sock1.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq: 0, audio: PCM(100) });
+    sock1.close(1000, "drop");
+
+    const sock2 = new FakeSocket();
+    gw.attach(sock2, auth);
+    sock2.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT }, resumeSessionId: sid, resumeSeq: 1 });
+    sock2.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq: 1, audio: PCM(100) });
+    expect(sock2.sent.find((m) => m.type === "chunk.ack" && m.seq === 1)).toBeTruthy();
+
+    // Past the old ack deadline: the dropped connection's timer must not fire.
+    await new Promise((r) => setTimeout(r, 700));
+    expect(sock2.sent.some((m) => m.type === "error")).toBe(false);
+    expect(sock2.sent.find((m) => m.type === "chunk.ack" && m.seq === 1)).toBeTruthy();
+    gw.dispose();
   });
 });

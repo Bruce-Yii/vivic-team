@@ -117,6 +117,73 @@ describe("StepfunAsrProvider & AsrGatewayServer wiring", () => {
     gateway.dispose();
   });
 
+  it("keeps buffered audio across a dropped socket and transcribes the resumed turn", async () => {
+    const bodies: Array<Record<string, unknown>> = [];
+    const fetchMock = vi.fn(async (_url: string, init?: { body?: unknown }) => {
+      bodies.push(JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>);
+      return sseResponse([
+        { type: "transcript.text.delta", delta: "完整" },
+        { type: "transcript.text.done", text: "完整一句话" },
+      ]);
+    });
+
+    const gateway = createAsrGateway({
+      providerFactory: () =>
+        new StepfunAsrProvider({
+          resolveBackend: () => ({
+            baseUrl: "https://api.stepfun.com/v1",
+            model: "stepaudio-2.5-asr",
+            headers: { authorization: "Bearer test-key" },
+            protocol: "sse",
+          }),
+          fetchImpl: fetchMock as unknown as typeof fetch,
+        }),
+      limits: { graceMs: 5000, idleTimeoutMs: 100000 },
+    });
+    const auth = { ok: true, accountId: "a1", deviceId: "d1", spaceId: "s1" };
+    const format = { type: "pcm", codec: "pcm_s16le", rate: 16000, bits: 16, channel: 1 };
+    const sid = crypto.randomUUID();
+
+    const first = new FakeSocket();
+    gateway.attach(first, auth);
+    first.emit({ type: "session.start", protocolVersion: ASR_TRANSPORT_VERSION, sessionId: sid, provider: "stepfun", language: "zh", audio: { format } });
+    for (const seq of [0, 1]) {
+      first.emit({ type: "audio.chunk", protocolVersion: ASR_TRANSPORT_VERSION, sessionId: sid, seq, audio: Buffer.alloc(640, 1).toString("base64") });
+    }
+    expect(first.sent.filter((m) => m.type === "chunk.ack")).toHaveLength(2);
+    // Transport drop: the gateway closes the provider, the turn is not over yet.
+    first.close();
+
+    const second = new FakeSocket();
+    gateway.attach(second, auth);
+    second.emit({
+      type: "session.start",
+      protocolVersion: ASR_TRANSPORT_VERSION,
+      sessionId: sid,
+      provider: "stepfun",
+      language: "zh",
+      resumeSessionId: sid,
+      resumeSeq: 2,
+      audio: { format },
+    });
+    const started = second.sent.find((m) => m.type === "session.started");
+    expect(started?.resume).toBe(true);
+    for (const seq of [2, 3]) {
+      second.emit({ type: "audio.chunk", protocolVersion: ASR_TRANSPORT_VERSION, sessionId: sid, seq, audio: Buffer.alloc(640, 1).toString("base64") });
+    }
+    expect(second.sent.filter((m) => m.type === "chunk.ack")).toHaveLength(2);
+    expect(second.sent.some((m) => m.type === "error")).toBe(false);
+
+    second.emit({ type: "session.end", protocolVersion: ASR_TRANSPORT_VERSION, sessionId: sid });
+    await vi.waitFor(() => {
+      expect(second.sent.some((m) => m.type === "final" && m.text === "完整一句话")).toBe(true);
+    });
+    // Pre-drop frames were retained and committed with the resumed tail.
+    const audio = (bodies[0] as { audio?: { data?: string } }).audio;
+    expect(Buffer.from(String(audio?.data ?? ""), "base64")).toHaveLength(4 * 640);
+    gateway.dispose();
+  });
+
   it("fails session.start cleanly with ProviderUnavailable when credentials are missing", () => {
     const credentials = new CredentialStore();
     const { gateway } = createAsrGatewayServer({ credentials });
