@@ -3,7 +3,7 @@ import http from "node:http";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { WebSocket, WebSocketServer } from "ws";
-import { loadConfig } from "./config.js";
+import { loadConfig, STEPFUN_API_BASE_URL } from "./config.js";
 import type { CredentialStore } from "./credentials.js";
 import type { ProviderStore } from "./providers/store.js";
 import { resolveSavedAsr } from "./providers/asr.js";
@@ -75,39 +75,12 @@ export function createAsrGatewayServer(options: AsrGatewayServerOptions = {}) {
   const config = options.config ?? loadConfig();
   const gatewayPath = options.path ?? "/asr";
 
-  const resolveStepfunBackend = (): StepfunAsrBackend | { error: string } | undefined => {
-    if (options.providerStore) {
-      const selected = resolveSavedAsr(options.providerStore);
-      if (selected && "error" in selected) return { error: selected.error ?? "语音识别连接不可用。" };
-      if (selected) {
-        return {
-          baseUrl: selected.baseUrl,
-          model: selected.model,
-          headers: selected.headers,
-          protocol: selected.protocol,
-        };
-      }
-    }
-    const secret = options.credentials?.getSecret();
-    if (secret) {
-      return {
-        baseUrl: config.stepfunBaseUrl.replace(/\/+$/, ""),
-        model: ASR_MODEL,
-        headers: { authorization: `Bearer ${secret.apiKey}` },
-        protocol: "sse",
-      };
-    }
-    const envKey = process.env.VIVIC_STEPFUN_API_KEY?.trim();
-    if (envKey) {
-      return {
-        baseUrl: config.stepfunBaseUrl.replace(/\/+$/, ""),
-        model: ASR_MODEL,
-        headers: { authorization: `Bearer ${envKey}` },
-        protocol: "sse",
-      };
-    }
-    return undefined;
-  };
+  const resolveStepfunBackend = (): StepfunAsrBackend | { error: string } | undefined => resolveStepfunAsrBackend({
+    providerStore: options.providerStore, credentials: options.credentials, config,
+    env: process.env,
+  });
+
+;
 
   const providerFactory = (sessionConfig: MockAsrProviderConfig): AsrProviderAdapter => {
     const requested = sessionConfig.provider ?? "mock";
@@ -216,4 +189,40 @@ const samePath = (a: string, b: string) =>
   process.platform === "win32" ? a.toLowerCase() === b.toLowerCase() : a === b;
 if (entry !== undefined && samePath(path.resolve(entry), selfPath)) {
   startAsrGatewayServer();
+}
+
+export interface StepfunAsrBackendInputs {
+  providerStore?: ProviderStore;
+  credentials?: CredentialStore;
+  config: ReturnType<typeof loadConfig>;
+  env?: NodeJS.ProcessEnv;
+}
+
+/**
+ * Resolve the StepFun speech backend. Speech always uses the official API base
+ * (`/v1/audio/asr/sse`); the Coding-Plan base (`/step_plan/v1`) serves chat only
+ * and answers 404 for transcription, so it must never leak in here.
+ */
+export function resolveStepfunAsrBackend(
+  inputs: StepfunAsrBackendInputs,
+): StepfunAsrBackend | { error: string } | undefined {
+  const { providerStore, credentials, config } = inputs;
+  const env = inputs.env ?? process.env;
+  if (providerStore) {
+    const selected = resolveSavedAsr(providerStore);
+    if (selected && "error" in selected) return { error: selected.error ?? "语音识别连接不可用。" };
+    if (selected) {
+      return { baseUrl: selected.baseUrl, model: selected.model, headers: selected.headers, protocol: selected.protocol };
+    }
+  }
+  const asrBaseUrl = config.stepfunAsrBaseUrl ?? STEPFUN_API_BASE_URL;
+  const secret = credentials?.getSecret();
+  if (secret) {
+    return { baseUrl: asrBaseUrl, model: ASR_MODEL, headers: { authorization: `Bearer ${secret.apiKey}` }, protocol: "sse" };
+  }
+  const envKey = env.VIVIC_STEPFUN_API_KEY?.trim();
+  if (envKey) {
+    return { baseUrl: asrBaseUrl, model: ASR_MODEL, headers: { authorization: `Bearer ${envKey}` }, protocol: "sse" };
+  }
+  return undefined;
 }

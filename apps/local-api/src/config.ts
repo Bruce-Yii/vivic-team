@@ -3,6 +3,12 @@ import fs from "node:fs";
 import path from "node:path";
 
 export const STEPFUN_PLAN_BASE_URL = "https://api.stepfun.com/step_plan/v1";
+/**
+ * Official StepFun API base. Speech (ASR/TTS) lives here, not under the
+ * Coding-Plan base: `/v1/audio/asr/sse` is the streaming transcription
+ * endpoint, while `/step_plan/v1` only serves plan chat completions.
+ */
+export const STEPFUN_API_BASE_URL = "https://api.stepfun.com/v1";
 export const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 export const DEFAULT_DEEPSEEK_MODEL = "deepseek-flash";
 export const INFERENCE_TIMEOUT_MS = 60_000;
@@ -97,6 +103,8 @@ export interface LocalApiConfig {
   tokenGenerated: boolean;
   allowedOrigins: string[];
   stepfunBaseUrl: string;
+  /** Base URL for StepFun speech (ASR) calls; never the Coding-Plan base. */
+  stepfunAsrBaseUrl?: string;
   /** `stepfun` (default, today's behavior) or the official DeepSeek fast path. */
   mainProvider?: MainProvider;
   /** Official DeepSeek base; only used when `mainProvider` is `deepseek`. */
@@ -190,6 +198,7 @@ export const loadConfig = (
       .map((s) => s.trim())
       .filter(Boolean),
     stepfunBaseUrl: (env.STEPFUN_BASE_URL ?? STEPFUN_PLAN_BASE_URL).replace(/\/+$/, ""),
+    stepfunAsrBaseUrl: (env.VIVIC_STEPFUN_ASR_BASE_URL?.trim() || STEPFUN_API_BASE_URL).replace(/\/+$/, ""),
     mainProvider: parseMainProvider(env.VIVIC_MAIN_PROVIDER),
     deepseekBaseUrl: (env.VIVIC_DEEPSEEK_BASE_URL?.trim() || DEEPSEEK_BASE_URL).replace(/\/+$/, ""),
     deepseekModel: parseDeepseekModel(env.VIVIC_DEEPSEEK_MODEL),
