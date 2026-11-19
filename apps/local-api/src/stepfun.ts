@@ -312,6 +312,10 @@ export const chatJson = async (
 ): Promise<StepfunResult<unknown>> => {
   const first = await chatJsonOnce(credential, messages, deps, options);
   if (first.ok || deps.signal?.aborted || deps.retry === false) return first;
+  // A timeout has already spent the caller's whole deadline. Retrying it — even
+  // as the non-streaming fallback — would start a fresh request after the
+  // caller stopped waiting and make one slow turn cost two timeouts.
+  if (first.code === "timeout") return first;
   const wait = first.code === "network" ? RETRY_DELAY_MS
     : first.code === "provider" && first.status && RETRYABLE_STATUS.has(first.status) ? first.retryAfterMs ?? RETRY_DELAY_MS : undefined;
   if (!options?.onTextDelta) {

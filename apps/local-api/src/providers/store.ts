@@ -151,11 +151,11 @@ export class ProviderStore {
 
   findForRole(role: ProviderRole): ProviderConfig | undefined {
     const candidates = [...this.#configs.values()].filter((config) => config.enabled && config.roles.includes(role));
-    if (role === "main") {
-      const stepfun = candidates.filter(config => config.protocol.startsWith("stepfun")).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
-      if (stepfun) return stepfun;
-    }
-    // A provider explicitly configured for the role wins over a shared one.
+    // The newest enabled provider wins: a row the user saved later is an explicit
+    // choice and must beat an earlier deployment seed, whatever its protocol. A
+    // provider dedicated to this role wins over one shared with other roles, and
+    // that dedicated/newest order also keeps the legacy StepFun slot from
+    // outranking a later DeepSeek (or any other) selection.
     const newestFirst = [...candidates].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
     return newestFirst.find((config) => config.roles.length === 1 && config.roles[0] === role) ?? newestFirst[0];
   }

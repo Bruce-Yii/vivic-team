@@ -46,7 +46,7 @@ describe("saved main provider drives the planner transport", () => {
       expect(status.providers[0]).toMatchObject({ name: "deepseek", connected: true });
       const response = await intent(app, "帮我写一首关于秋天的短诗");
       expect((await response.json()).usedProvider).toBe("deepseek");
-      expect(urls).toEqual(["https://api.deepseek.com/v1/chat/completions"]);
+      expect(urls).toEqual(["https://api.deepseek.com/chat/completions"]);
     } finally { app.dispose(); vi.unstubAllEnvs(); }
   });
 
@@ -71,8 +71,10 @@ describe("saved main provider drives the planner transport", () => {
     try {
       const status = await (await app.request("/api/providers/status", { headers: authed })).json();
       expect(status).toMatchObject({ activeProvider: "deepseek", mainProvider: "deepseek" });
+      // The saved row's legacy model id and its /v1 base URL are normalized to the
+      // official fast path: the fixed model catalog and https://api.deepseek.com.
       expect(status.providers[0]).toMatchObject({
-        name: "deepseek", connected: true, models: ["deepseek-chat"], defaultModel: "deepseek-chat",
+        name: "deepseek", connected: true, models: ["deepseek-flash", "deepseek-v4-pro"], defaultModel: "deepseek-flash",
       });
 
       const response = await intent(app, "帮我写一首关于秋天的短诗");
@@ -80,8 +82,8 @@ describe("saved main provider drives the planner transport", () => {
       expect(body.kind).toBe("envelope");
       expect(body.usedProvider).toBe("deepseek");
       expect(String(body.message ?? "")).not.toContain("未连接模型");
-      expect(urls).toEqual(["https://api.deepseek.com/v1/chat/completions"]);
-      expect(bodies[0]).toMatchObject({ model: "deepseek-chat", thinking: { type: "disabled" },
+      expect(urls).toEqual(["https://api.deepseek.com/chat/completions"]);
+      expect(bodies[0]).toMatchObject({ model: "deepseek-flash", thinking: { type: "disabled" },
         response_format: { type: "json_object" } });
       expect(headers[0]).toBe(`Bearer ${DEEPSEEK_KEY}`);
       expect(JSON.stringify(body)).not.toContain(DEEPSEEK_KEY);
@@ -106,7 +108,7 @@ describe("saved main provider drives the planner transport", () => {
       const response = await intent(app, "帮我写一首关于秋天的短诗");
       const body = await response.json();
       expect(body).toMatchObject({ kind: "envelope", usedProvider: "deepseek" });
-      expect(urls).toEqual(["https://api.deepseek.com/v1/chat/completions"]);
+      expect(urls).toEqual(["https://api.deepseek.com/chat/completions"]);
     } finally { app.dispose(); vi.unstubAllEnvs(); }
   });
 

@@ -21,19 +21,25 @@ const newId = (prefix: string) =>
 
 const iso = () => new Date().toISOString();
 
-const countdownCard = (seconds: number): CardRecord => ({
-  id: newId("countdown"),
-  type: "CountdownCard",
-  variant: "minimal",
-  displayProps: {},
-  sourceData: {
-    targetAt: new Date(Date.now() + seconds * 1000).toISOString(),
-    startedAt: iso(),
-  },
-  sources: [],
-  layout: { x: 0, y: 0, width: 264, height: 96, pinned: false },
-  metadata: { createdAt: iso(), updatedAt: iso() },
-});
+const countdownCard = (seconds: number): CardRecord => {
+  // One clock read for the whole record: a startedAt read after targetAt would
+  // make the timer run for (seconds − read latency), which a busy process can
+  // turn into a visible drift.
+  const now = Date.now(), stamp = new Date(now).toISOString();
+  return {
+    id: newId("countdown"),
+    type: "CountdownCard",
+    variant: "minimal",
+    displayProps: {},
+    sourceData: {
+      targetAt: new Date(now + seconds * 1000).toISOString(),
+      startedAt: stamp,
+    },
+    sources: [],
+    layout: { x: 0, y: 0, width: 264, height: 96, pinned: false },
+    metadata: { createdAt: stamp, updatedAt: stamp },
+  };
+};
 
 const todoCard = (items: string[]): CardRecord => {
   const ts = iso();
