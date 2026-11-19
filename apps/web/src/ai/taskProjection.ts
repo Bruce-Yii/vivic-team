@@ -2,12 +2,17 @@
  * Realtime Session Coordinator without creating a separate task system.
  * This is a READ-ONLY view of Hosted Task state for the frontend. */
 
+export type TaskMutationClass = "read_only" | "mutating" | "unknown";
+
 export interface TaskProjection {
   taskId: string;
   status: "accepted" | "running" | "awaiting_clarification" | "succeeded" | "failed" | "cancelled" | "unknown";
   message: string;
   createdCardIds: string[];
   focusCardId?: string;
+  mutationClass: TaskMutationClass;
+  /** True only when the running task is read-only and may be safely superseded by a new turn. */
+  canSafelySupersede: boolean;
   isActive: boolean;
   isTerminal: boolean;
   needsFeedback: boolean;
@@ -19,15 +24,20 @@ export function projectTask(task: {
   message: string;
   createdCardIds?: string[];
   focusCardId?: string;
+  mutationClass?: TaskMutationClass;
 }): TaskProjection {
   const terminal = ["succeeded", "completed", "failed", "cancelled", "unknown", "awaiting_clarification"].includes(task.status);
+  const isActive = !terminal && task.status !== "awaiting_clarification";
+  const mutationClass: TaskMutationClass = task.mutationClass ?? "unknown";
   return {
     taskId: task.id,
     status: task.status as TaskProjection["status"],
     message: task.message,
     createdCardIds: task.createdCardIds ?? [],
     focusCardId: task.focusCardId,
-    isActive: !terminal && task.status !== "awaiting_clarification",
+    mutationClass,
+    canSafelySupersede: isActive && mutationClass === "read_only",
+    isActive,
     isTerminal: terminal,
     needsFeedback: task.status === "awaiting_clarification" || task.status === "succeeded" || task.status === "failed",
   };
