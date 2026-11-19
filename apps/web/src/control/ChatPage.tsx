@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { HarkIcon } from "@/components/hark/HarkPrimitives";
 import type { ResolvedCard } from "@/commands/references";
 import type { Attachment } from "@/ai/attachments";
+import { getVoiceConfiguration } from "@/ai/voiceConfig";
 import type { ControlHost } from "@/sync/controlHost";
 import { ChatComposer, type ClarifyState } from "./ChatComposer";
 import { ChatStatusLine } from "./ChatStatusLine";
@@ -102,7 +103,21 @@ export const ChatPage = ({ hidden, host, theme, feedback, notice, onOpenSettings
             <HarkIcon name="apps" size={20} aria-hidden="true" />
           </button>
           <ReminderCenter host={host} disabled={composer.disabled} theme={theme} />
-        <button type="button" className="vivic-round-button" onClick={() => { if (fd.enabled) stopFullDuplex(); else void startFullDuplex(); }} aria-label="全双工语音" title={fd.enabled ? `全双工开启：${fd.status}` : "开启全双工语音"} data-vivic-full-duplex>
+        <button
+          type="button"
+          className="vivic-round-button"
+          onClick={() => {
+            if (fd.enabled) {
+              stopFullDuplex();
+            } else {
+              const stt = getVoiceConfiguration().stt;
+              void startFullDuplex({ asr: { provider: stt === "stepfun" || stt === "local" ? stt : "mock" } });
+            }
+          }}
+          aria-label="全双工语音"
+          title={fd.enabled ? `全双工开启：${fd.status}` : "开启全双工语音"}
+          data-vivic-full-duplex
+        >
           <span style={{fontSize:10}}>{fd.enabled ? "FD" : "fd"}</span>
         </button>
         </div>
@@ -115,7 +130,7 @@ export const ChatPage = ({ hidden, host, theme, feedback, notice, onOpenSettings
         <ChatStatusLine text={displayFeedback} visible={fresh || sticky} busy={composer.busy} onCancel={composer.onCancel} />
         <ChatComposer {...composer} onOpenConnectionSettings={() => {
           interruptByUi("navigation");
-          if (window.location.hash !== "#settings-connections") window.location.hash = "settings-connections";
+          if (window.location.hash !== "#settings-connections") window.location.hash = "#settings-connections";
           onOpenSettings();
         }} menuActions={close => <>
           <FileUploadButton host={host} disabled={composer.disabled || composer.busy} compact onPick={close} onStatus={setFileMessage} />
