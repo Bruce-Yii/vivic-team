@@ -1,4 +1,4 @@
-import type { CanvasContext } from "../schemas.js";
+import type { CanvasContext, InterruptedSpeechContext } from "../schemas.js";
 import { replyStyleInstruction } from "./style.js";
 
 export const buildReminderSystemPrompt = (): string => `你是提醒信息抽取器，只输出紧凑 JSON，不解释、不展示推理、不生成卡片模板。
@@ -27,9 +27,15 @@ TodoCard：displayProps={title?:标题,items:[{id:条目id,text:原文任务,don
 actions 中禁止创建或修改 WeatherCard、TableCard、SearchResultCard；ChartCard 只能经场景卡片 data_visualization 用用户给出的数值生成。不能伪造价格、库存、来源、日期、图片或数据。模型不可联网或执行工具/代码。
 ${replyStyleInstruction()}`;
 /** Compact context only for generic reference resolution. */
-export const buildUserPrompt = (text: string, ctx: CanvasContext, clarification?: { utterance: string; question: string }): string => JSON.stringify({
+export const buildUserPrompt = (
+  text: string,
+  ctx: CanvasContext,
+  clarification?: { utterance: string; question: string },
+  interruptedSpeech?: InterruptedSpeechContext,
+): string => JSON.stringify({
   now: new Date().toISOString(), utterance: text,
   ...(clarification ? { clarification } : {}),
+  ...(interruptedSpeech ? { interruptedSpeech } : {}),
   canvas: { canvasId: ctx.canvasId, stage: ctx.stage, focusHistory: ctx.focusHistory,
     totalCardCount: (ctx as CanvasContext & { totalCardCount?: number }).totalCardCount,
     cards: ctx.cards.map((c) => ({ id: c.id, type: c.type, aliases: c.aliases ?? [],
