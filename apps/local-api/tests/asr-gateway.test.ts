@@ -112,6 +112,48 @@ describe("ASR gateway reconnection", () => {
     expect(started.resume).toBe(true);
   });
 });
+describe("ASR resume sequence rebase", () => {
+  it("accepts frames after resume when the client rebases its sequence", () => {
+    const gw = createAsrGateway({ limits: { graceMs: 1000, idleTimeoutMs: 100000 } });
+    const auth = { ok: true, accountId: "acct-r", deviceId: "dev-r" };
+    const sid = randomUUID();
+    const sock1 = new FakeSocket();
+    gw.attach(sock1, auth);
+    sock1.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT }, mock: { finalDelayMs: 10 } });
+    // Three frames delivered before the drop.
+    for (const seq of [0, 1, 2]) sock1.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq, audio: PCM(100) });
+    sock1.close(1000, "drop");
+
+    const sock2 = new FakeSocket();
+    gw.attach(sock2, auth);
+    // Reconnect and continue from seq 3 without replaying 0..2.
+    sock2.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT }, resumeSessionId: sid, resumeSeq: 3, mock: { finalDelayMs: 10 } });
+    sock2.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq: 3, audio: PCM(100) });
+
+    const ack = sock2.sent.find((m) => m.type === "chunk.ack" && m.seq === 3);
+    expect(ack).toBeTruthy();
+    expect(sock2.sent.some((m) => m.type === "error")).toBe(false);
+  });
+
+  it("rebases even when the client restarts numbering at zero", () => {
+    const gw = createAsrGateway({ limits: { graceMs: 1000, idleTimeoutMs: 100000 } });
+    const auth = { ok: true, accountId: "acct-z", deviceId: "dev-z" };
+    const sid = randomUUID();
+    const sock1 = new FakeSocket();
+    gw.attach(sock1, auth);
+    sock1.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT }, mock: { finalDelayMs: 10 } });
+    for (const seq of [0, 1, 2, 3]) sock1.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq, audio: PCM(100) });
+    sock1.close(1000, "drop");
+
+    const sock2 = new FakeSocket();
+    gw.attach(sock2, auth);
+    sock2.emitMessage({ type: "session.start", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, audio: { format: FORMAT }, resumeSessionId: sid, resumeSeq: 0, mock: { finalDelayMs: 10 } });
+    sock2.emitMessage({ type: "audio.chunk", protocolVersion: "vivic-asr-protocol@1", sessionId: sid, seq: 0, audio: PCM(100) });
+
+    expect(sock2.sent.find((m) => m.type === "chunk.ack" && m.seq === 0)).toBeTruthy();
+  });
+});
+
 describe("ASR gateway reconnection audio", () => {
   it("binds a new socket within grace and acks audio", () => {
     const gw = createAsrGateway({ limits: { graceMs: 1000, idleTimeoutMs: 100000 } });

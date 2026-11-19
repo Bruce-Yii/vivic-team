@@ -45,6 +45,12 @@ export const AsrSessionStartSchema = z.strictObject({
   vad: z.enum(["server", "client", "none"]).optional(),
   maxDurationMs: z.number().int().min(1000).max(90000).optional(),
   resumeSessionId: z.string().uuid().optional(),
+  /**
+   * Next audio sequence number this connection will send after a resume.
+   * The gateway rebases `expectedSeq` to it so a reconnecting client never has to
+   * replay frames the old socket already delivered.
+   */
+  resumeSeq: z.number().int().min(0).optional(),
   mock: z.record(z.string(), z.unknown()).optional(),
   protocolVersion: z.string().optional(),
   eventId: z.string().uuid().optional(),
