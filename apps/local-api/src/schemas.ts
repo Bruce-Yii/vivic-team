@@ -44,6 +44,8 @@ export const InterruptedSpeechContextSchema = z.strictObject({
   playedMs: z.number().finite().nonnegative().nullable().optional(),
 });
 
+export type InterruptedSpeechContext = z.infer<typeof InterruptedSpeechContextSchema>;
+
 export const IntentRequestSchema = z.strictObject({
   task: DecisionTaskRequestSchema.optional(),
   text: z.string().min(1).max(500),
