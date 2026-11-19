@@ -8,7 +8,7 @@ import { DEEPSEEK_BASE_URL, DEFAULT_DEEPSEEK_MODEL, PLAN_MAX_TOKENS, type LocalA
 import { CredentialStore } from "./credentials.js";
 import { DeepseekCredentialStore, deepseekModel as normalizeDeepseekModel, validateDeepseek } from "./deepseek.js";
 import { accountPlanner } from "./modelFallback.js";
-import { resolveSavedMain } from "./providers/main.js";
+import { resolveBootMainProvider, resolveSavedMain } from "./providers/main.js";
 import type { CardDefinition } from "@vivic/card-runtime";
 import { currentCardDefinitions } from "./cards/catalog.js";
 import { PlatformCredentialStore } from "./platformCredential.js";
@@ -160,7 +160,10 @@ export const createApp = (deps: AppDeps) => {
   // `VIVIC_MAIN_PROVIDER=deepseek` only changes the main planner transport. A
   // separate in-memory store keeps speech/ASR on their StepFun credential, and
   // the key comes from DEEPSEEK_API_KEY without touching disk or logs.
-  const mainProvider = config.mainProvider ?? "stepfun";
+  const mainProvider = resolveBootMainProvider(config.mainProvider, {
+    deepseekApiKey: config.deepseekApiKey,
+    rows: deps.providerStore?.list(),
+  });
   const envMainCredentials = mainProvider === "deepseek" ? deps.credentials ?? new CredentialStore() : credentials;
   const settingsCredentials = new CredentialStore();
   let mainCredentials = envMainCredentials;

@@ -9,6 +9,11 @@ import { createOnlineHandler } from "../src/online/sessions.js";
 import { createOnlineSessionApp } from "../src/online/appFactory.js";
 import { authed, chatOk, modelsOk, TEST_TOKEN } from "./helpers.js";
 
+// These suites stub the StepFun transport; pin the provider explicitly so the
+// product default (DeepSeek) never turns them into real network calls.
+process.env.VIVIC_MAIN_PROVIDER = "stepfun";
+
+
 const TOKEN = "test-only-provider-token-111";
 const SIGNAL = () => new AbortController().signal;
 const schema = { type: "object", properties: { query: { type: "string", minLength: 1 } }, required: ["query"], additionalProperties: false };

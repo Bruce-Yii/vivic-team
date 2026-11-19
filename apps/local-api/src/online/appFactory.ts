@@ -1,7 +1,7 @@
 import { createApp, type AppDeps } from "../app.js";
 import {
   STEPFUN_PLAN_BASE_URL, STEPFUN_API_BASE_URL, INFERENCE_TIMEOUT_MS, CONNECTION_TIMEOUT_MS, SPEECH_TIMEOUT_MS, streamFeedbackEnabled,
-  providerDataDirFromEnv, providerPersistEnabled,
+  providerDataDirFromEnv, providerPersistEnabled, parseMainProvider, parseDeepseekModel, DEEPSEEK_BASE_URL, DEFAULT_DEEPSEEK_MODEL,
 } from "../config.js";
 import type { LocalApiConfig } from "../config.js";
 
@@ -32,6 +32,12 @@ export function createOnlineSessionApp(
     bodyLimitBytes: 64 * 1024, searchEnabled: true, publicDnsFallback: false,
     // Deployment switch: unset keeps today's SSE first sentence; `off` rolls it back.
     streamFeedback: streamFeedbackEnabled(process.env.VIVIC_STREAM_FEEDBACK),
+    // Same provider contract as loadConfig: an online session honours the deployment
+    // switch instead of silently taking the code default.
+    mainProvider: parseMainProvider(process.env.VIVIC_MAIN_PROVIDER),
+    deepseekBaseUrl: (process.env.VIVIC_DEEPSEEK_BASE_URL?.trim() || DEEPSEEK_BASE_URL).replace(/\/+$/, ""),
+    deepseekModel: parseDeepseekModel(process.env.VIVIC_DEEPSEEK_MODEL),
+    deepseekApiKey: process.env.DEEPSEEK_API_KEY?.trim() || undefined,
     // Same env contract as loadConfig; an online app never reads a config file.
     trustProxyIp: process.env.VIVIC_TRUST_PROXY_IP !== "off",
     // Tool-layer switches, same env contract as loadConfig: the online session app

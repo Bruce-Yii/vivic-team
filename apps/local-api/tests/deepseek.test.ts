@@ -19,9 +19,9 @@ const isolatedConfig = (env: NodeJS.ProcessEnv = {}) => {
 };
 
 describe("VIVIC_MAIN_PROVIDER configuration", () => {
-  it("defaults to today's StepFun behavior and a 4096 planner cap", () => {
+  it("defaults to DeepSeek and a 4096 planner cap", () => {
     const config = isolatedConfig();
-    expect(config.mainProvider).toBe("stepfun");
+    expect(config.mainProvider).toBe("deepseek");
     expect(config.deepseekBaseUrl).toBe("https://api.deepseek.com");
     expect(config.deepseekModel).toBe("deepseek-flash");
     expect(config.deepseekApiKey).toBeUndefined();
@@ -42,8 +42,12 @@ describe("VIVIC_MAIN_PROVIDER configuration", () => {
     });
   });
 
-  it.each(["stepfun", "other", "", "   "])("keeps %j on the StepFun default", value => {
+  it.each(["stepfun", " StepFun "])("keeps %j on StepFun when asked explicitly", value => {
     expect(isolatedConfig({ VIVIC_MAIN_PROVIDER: value }).mainProvider).toBe("stepfun");
+  });
+
+  it.each(["deepseek", "DeepSeek", "other", "", "   "])("falls back to the DeepSeek default for %j", value => {
+    expect(isolatedConfig({ VIVIC_MAIN_PROVIDER: value }).mainProvider).toBe("deepseek");
   });
 
   it.each([

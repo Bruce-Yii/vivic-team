@@ -86,3 +86,22 @@ export const resolveSavedMain = (
     saved,
   };
 };
+
+/**
+ * Boot-time main-provider decision.
+ *
+ * DeepSeek is the product default. A deployment with no DeepSeek key at all must
+ * keep working on the StepFun row it already saved, so the default never turns an
+ * unconfigured host into "every turn fails".
+ */
+export function resolveBootMainProvider(
+  configured: MainProvider | undefined,
+  inputs: { deepseekApiKey?: string; rows?: Array<{ enabled: boolean; roles: readonly string[]; protocol: string; baseUrl: string }> },
+): MainProvider {
+  const provider = configured ?? "deepseek";
+  if (provider !== "deepseek" || inputs.deepseekApiKey?.trim()) return provider;
+  const mainRows = (inputs.rows ?? []).filter((row) => row.enabled && row.roles.includes("main"));
+  const hasDeepSeekRow = mainRows.some((row) => row.protocol === "openai-compatible" && /deepseek/i.test(row.baseUrl));
+  const hasStepFunRow = mainRows.some((row) => row.protocol.startsWith("stepfun"));
+  return !hasDeepSeekRow && hasStepFunRow ? "stepfun" : provider;
+}

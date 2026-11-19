@@ -2,6 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createOnlineHandler, ONLINE_COOKIE, type OnlineHandlerOptions, type OnlineSessionApp } from "../src/online/sessions.js";
 import { createOnlineSessionApp } from "../src/online/appFactory.js";
 
+// These suites stub the StepFun transport; pin the provider explicitly so the
+// product default (DeepSeek) never turns them into real network calls.
+process.env.VIVIC_MAIN_PROVIDER = "stepfun";
+
+
 const ORIGIN = "https://vivic.example";
 const running: ReturnType<typeof createOnlineHandler>[] = [];
 const response = (data: unknown) => new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json" } });

@@ -13,6 +13,11 @@ import { GptProvider } from "../src/gpt/provider.js";
 import { STEPFUN_API_BASE_URL } from "../src/config.js";
 import { authed, chatOk, emptyContext, modelsOk, testConfig, TEST_TOKEN } from "./helpers.js";
 
+// These suites stub the StepFun transport; pin the provider explicitly so the
+// product default (DeepSeek) never turns them into real network calls.
+process.env.VIVIC_MAIN_PROVIDER = "stepfun";
+
+
 const ORIGIN = "https://vivic.example";
 const KEY_A = "TEST-online-private-A";
 const KEY_B = "TEST-online-private-B";
