@@ -147,6 +147,48 @@ export const subscribeTurnTaking = (listener: () => void) => {
 };
 
 /** Classify a transcript into a turn intent via deterministic rules. */
+const ECHO_CHAR_RE = /[^\p{Script=Han}a-z0-9]/gu;
+/** Keep only speech-bearing characters so punctuation and spacing do not matter. */
+const echoKey = (text: string) => text.toLowerCase().replace(ECHO_CHAR_RE, "");
+
+/** Multiset character overlap of `a` covered by `b`. */
+const overlapRatio = (a: string, b: string): number => {
+  if (!a.length) return 0;
+  const pool = new Map<string, number>();
+  for (const ch of b) pool.set(ch, (pool.get(ch) ?? 0) + 1);
+  let hits = 0;
+  for (const ch of a) {
+    const left = pool.get(ch) ?? 0;
+    if (left > 0) { hits += 1; pool.set(ch, left - 1); }
+  }
+  return hits / a.length;
+};
+
+export const SELF_ECHO_OVERLAP = 0.6;
+export const SELF_ECHO_MIN_CHARS = 3;
+
+/**
+ * True when a transcript is most likely the assistant's own TTS leaking back
+ * through the microphone (AEC off, speakers, or echo residual) instead of the
+ * user speaking.
+ *
+ * Without this guard the assistant can interrupt itself: its own sentence
+ * "另外还有两张卡片…" contains "另外", which `classifyIntent` maps to
+ * `new_constraint`, and "已经取消…" maps to `cancel_task`. Measured at 25% of
+ * assistant lines in the echo harness.
+ *
+ * The comparison is intentionally conservative: short utterances ("停", "嗯")
+ * never match, so a real barge-in is still honoured while the assistant speaks.
+ */
+export const looksLikeSelfEcho = (transcript: string, spokenText: string | null | undefined): boolean => {
+  if (!spokenText) return false;
+  const heard = echoKey(transcript);
+  const spoken = echoKey(spokenText);
+  if (heard.length < SELF_ECHO_MIN_CHARS || spoken.length < SELF_ECHO_MIN_CHARS) return false;
+  if (spoken.includes(heard) || heard.includes(spoken)) return true;
+  return overlapRatio(heard, spoken) >= SELF_ECHO_OVERLAP;
+};
+
 export const classifyIntent = (transcript: string): TurnIntent => {
   const text = transcript.trim().toLowerCase();
   if (!text) return "irrelevant";
