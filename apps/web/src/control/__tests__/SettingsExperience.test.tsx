@@ -22,6 +22,8 @@ const render = (hidden = false, suspended = false) => root.render(<OnlineWorkspa
 const nav = (id: string) => container.querySelector<HTMLElement>('[data-settings-nav="' + id + '"]')!;
 const group = (id: string) => container.querySelector<HTMLElement>('[data-settings-group="' + id + '"]')!;
 const modal = () => container.querySelector<HTMLDialogElement>("dialog")!;
+/** The native dialog closes through a 220ms exit animation before it leaves the top layer. */
+const settleExit = () => act(async () => { await new Promise(resolve => setTimeout(resolve, 260)); });
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   // jsdom has no native top layer. Real focus/inertness is checked in Playwright.
@@ -37,10 +39,11 @@ describe("settings panel keeps live configuration", () => {
   it("keeps provider drafts and editor state through tabs, disclosure, close and reopen", async () => {
     await act(async () => render());
     expect(modal().open).toBe(true);
-    expect(container.querySelectorAll(".se-nav [data-settings-nav]")).toHaveLength(3);
+    expect([...container.querySelectorAll<HTMLElement>(".se-nav [data-settings-nav]")].map(node => node.dataset.settingsNav))
+      .toEqual(["connections", "devices", "preferences", "voice", "reminders", "data"]);
     const input = container.querySelector<HTMLInputElement>("input")!;
     input.value = "TEST unsaved configuration";
-    const detail = container.querySelector<HTMLDetailsElement>('[data-settings-extra="local"]')!;
+    const detail = container.querySelector<HTMLDetailsElement>('[data-settings-services]')!;
     detail.open = true;
     await act(async () => container.querySelector<HTMLButtonElement>("[data-test-panel]")!.click());
     detail.open = false;
@@ -49,6 +52,7 @@ describe("settings panel keeps live configuration", () => {
     await act(async () => nav("connections").click());
     expect(detail.open).toBe(false);
     await act(async () => render(true));
+    await settleExit();
     expect(modal().open).toBe(false);
     await act(async () => render(false));
     expect(modal().open).toBe(true);
@@ -74,6 +78,7 @@ describe("settings panel keeps live configuration", () => {
     const input = container.querySelector<HTMLInputElement>("input")!;
     input.value = "TEST kept";
     await act(async () => render(false, true));
+    await settleExit();
     expect(modal().open).toBe(false);
     await act(async () => render(false, false));
     expect(modal().open).toBe(true); expect(input.value).toBe("TEST kept");

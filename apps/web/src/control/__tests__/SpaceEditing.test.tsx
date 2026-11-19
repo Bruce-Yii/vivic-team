@@ -8,7 +8,7 @@ import { createControlHost, type ControlHost } from "@/sync/controlHost";
 import { createMemoryHub, flushChannel } from "@/sync/channel";
 import { createMemoryLockProvider } from "@/sync/testing";
 import { RemindersSection } from "../RemindersSection";
-import { SpaceTools } from "../SpaceTools";
+import { DataActions } from "../DataActions";
 
 // These tests exercise owner mutations and save results. Native dialog focus,
 // card rendering and the source surfaces are covered by browser verification.
@@ -68,8 +68,8 @@ describe("Space editors preserve explicit choices and confirmed outcomes", () =>
 
   it("does not clear another canvas if the active Space changes after confirmation opens", async () => {
     const clear = vi.spyOn(host, "clearActiveCanvas");
-    await act(async () => root.render(<SpaceTools host={host} onOpenDisplay={() => {}} />));
-    await click("Space"); await click("清空此画布");
+    await act(async () => root.render(<DataActions host={host} readonly={false} onBeforeClear={() => {}} />));
+    await click("清空此画布");
     await act(async () => { host.switchCanvas(host.createCanvas("另一个 Space")); });
     await click("清空", document.querySelector('[role="alertdialog"]')!);
     expect(clear).not.toHaveBeenCalled();
@@ -85,8 +85,8 @@ describe("Space editors preserve explicit choices and confirmed outcomes", () =>
     });
     const before = host.getSnapshot(), id = before.activeCanvasId!;
     const version = before.canvases.find(canvas => canvas.id === id)!.version;
-    await act(async () => root.render(<SpaceTools host={host} onOpenDisplay={() => {}} />));
-    await click("Space"); await click("清空此画布");
+    await act(async () => root.render(<DataActions host={host} readonly={false} onBeforeClear={() => {}} />));
+    await click("清空此画布");
     await click("清空", document.querySelector('[role="alertdialog"]')!);
     expect(flush).toHaveBeenCalledWith(id, expect.any(Number));
     expect(flush.mock.calls[0]![1]).toBeGreaterThan(version);

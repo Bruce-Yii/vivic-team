@@ -4,7 +4,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LauncherApp from "./LauncherApp";
 vi.mock("@/components/atmosphere/AtmosphereBackground", () => ({ AtmosphereBackground: () => null }));
-const cached = { mode: "managed", phase: "cached", enabled: false, model: "Qwen", error: null, totalBytes: 530000000, downloadedBytes: 530000000 };
+const cached = { mode: "managed", phase: "cached", enabled: false, model: "Qwen", error: null, totalBytes: 530000000, downloadedBytes: 530000000,
+  // Starting a managed model is gated on the server-side memory check.
+  resources: { allowed: true, freeMemoryBytes: 8 * 2 ** 30, requiredFreeBytes: 4 * 2 ** 30, basis: "TEST memory budget" } };
 const response = (value: unknown) => new Response(JSON.stringify(value));
 let root: Root, container: HTMLDivElement;
 beforeEach(() => {
