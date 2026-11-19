@@ -12,6 +12,7 @@ import {
   type InterruptedSpeechContext,
 } from "./turnTaking";
 import type { TaskProjection } from "./taskProjection";
+import { applyInterjection, decideInterjection } from "./interjection";
 import { AsrGatewayClient, type AsrGatewayClientOptions } from "./asrGatewayClient";
 
 export type FullDuplexStatus =
@@ -323,6 +324,27 @@ export const startFullDuplex = async (options: FullDuplexStartOptions = {}): Pro
           }
           update({ lastTranscript: trimmed, status: "listening" });
           const aiSpeakingNow = isSpeechActive();
+          // One shared effect surface: the interrupt policy is pure data (so the
+          // acceptance test can assert its exact call counts), while these effects
+          // are the real coordinator callbacks. The Host task projection — not a
+          // local guess — decides whether a new turn may supersede the running one.
+          const effectsFor = (interrupted: InterruptedSpeechContext | null) => ({
+            transcript: trimmed,
+            turnId: turnCounter + 1,
+            interrupted,
+            unduck: unduckSpeech,
+            confirmBargeIn,
+            cancelTask: (taskId: string) => onCancelTaskById?.(taskId),
+            dispatch: (text: string, options: { cancelRunning: boolean; interruptedContext: InterruptedSpeechContext | null | undefined }) =>
+              dispatchCommand(text, options),
+            queueConstraint: (text: string, turnId: number) => { appendWorkingConstraint(text, turnId); },
+            pendingConstraints: () => getWorkingConstraints().map((item) => item.text),
+            publishInterrupted: (context: InterruptedSpeechContext | null) => {
+              if (context) update({ interruptedContext: context });
+            },
+            publishPendingConstraints: (constraints: readonly string[]) => update({ pendingConstraints: [...constraints] }),
+            resumePlayback: resumeFromPause,
+          });
 
           if (aiSpeakingNow) {
             const speechBefore = getSpeechSnapshot();
@@ -337,85 +359,21 @@ export const startFullDuplex = async (options: FullDuplexStartOptions = {}): Pro
             }
             const intent = handleUserTranscript(trimmed);
             update({ lastIntent: intent });
-
-            if (intent === "stop" || intent === "cancel_task") {
-              const interrupted = buildInterruptedSpeechContext(speechBefore, "voice");
-              unduckSpeech();
-              if (interrupted) update({ interruptedContext: interrupted });
-              if (intent === "cancel_task" && segmentTaskId && onCancelTaskById && currentTaskProjection?.isTerminal !== true) {
-                onCancelTaskById(segmentTaskId);
-              }
-              return;
-            }
-
-            if (intent === "new_constraint") {
-              const interrupted = buildInterruptedSpeechContext(speechBefore, "voice");
-              unduckSpeech();
-              if (currentTaskProjection?.isActive) {
-                appendWorkingConstraint(trimmed, turnCounter + 1);
-                update({
-                  interruptedContext: interrupted ?? snapshot.interruptedContext,
-                  pendingConstraints: getWorkingConstraints().map((item) => item.text),
-                });
-              } else {
-                confirmBargeIn();
-                dispatchCommand(trimmed, { cancelRunning: false, interruptedContext: interrupted });
-              }
-              return;
-            }
-
-            if (intent === "new_topic" || (intent === "unknown" && [...trimmed].length >= 2)) {
-              const interrupted = buildInterruptedSpeechContext(speechBefore, "voice");
-              confirmBargeIn();
-              unduckSpeech();
-              const canSupersede = Boolean(currentTaskProjection?.canSafelySupersede);
-              if (canSupersede && segmentTaskId && onCancelTaskById) {
-                onCancelTaskById(segmentTaskId);
-              }
-              dispatchCommand(trimmed, { cancelRunning: canSupersede, interruptedContext: interrupted });
-              return;
-            }
-
-            // backchannel / continue / irrelevant: restore volume and let playback continue
-            unduckSpeech();
+            const decision = decideInterjection({
+              intent, transcript: trimmed, speechActive: true, task: currentTaskProjection, taskId: segmentTaskId,
+            });
+            applyInterjection(decision, effectsFor(
+              decision.captureInterrupted ? buildInterruptedSpeechContext(speechBefore, "voice") : null,
+            ));
             return;
           }
 
           const intent = classifyIntent(trimmed);
           update({ lastIntent: intent });
-          if (intent === "backchannel" || intent === "irrelevant") {
-            unduckSpeech();
-            return;
-          }
-          if (intent === "continue") {
-            resumeFromPause();
-            unduckSpeech();
-            return;
-          }
-          if (intent === "stop") {
-            unduckSpeech();
-            return;
-          }
-          if (intent === "cancel_task") {
-            if (segmentTaskId && onCancelTaskById && currentTaskProjection?.isTerminal !== true) {
-              onCancelTaskById(segmentTaskId);
-            }
-            unduckSpeech();
-            return;
-          }
-          if (intent === "new_constraint" && currentTaskProjection?.isActive) {
-            appendWorkingConstraint(trimmed, turnCounter + 1);
-            update({ pendingConstraints: getWorkingConstraints().map((item) => item.text) });
-            unduckSpeech();
-            return;
-          }
-
-          const canSupersede = Boolean(currentTaskProjection?.canSafelySupersede);
-          if (canSupersede && segmentTaskId && onCancelTaskById) {
-            onCancelTaskById(segmentTaskId);
-          }
-          unduckSpeech();
-          dispatchCommand(trimmed, { cancelRunning: canSupersede });
+          const decision = decideInterjection({
+            intent, transcript: trimmed, speechActive: false, task: currentTaskProjection, taskId: segmentTaskId,
+          });
+          applyInterjection(decision, effectsFor(null));
         },
         onError: (_code: string, message: string) => {
           if (token !== generation) return;
