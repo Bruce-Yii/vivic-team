@@ -6,6 +6,11 @@ import { createOnlineSessionApp } from "../src/online/appFactory.js";
 import type { DiagnosticEvent } from "../src/diagnostics.js";
 import { authed, emptyContext, modelsOk, testConfig, TEST_TOKEN } from "./helpers.js";
 
+// These suites stub the StepFun transport; pin the provider explicitly so the
+// product default (DeepSeek) never turns them into real network calls.
+process.env.VIVIC_MAIN_PROVIDER = "stepfun";
+
+
 const sseFrame = (text: string) => `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`;
 const stamp = "2026-10-30T00:00:00.000Z";
 /** The main planner contract: a complete NoteCard record. */

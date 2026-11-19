@@ -14,6 +14,10 @@ export const testConfig = (
   allowedOrigins: ["http://localhost:5173"],
   modelApiBaseUrl: "https://unit.test/model",
   stepfunBaseUrl: "https://unit.test/v1",
+  // The product default is DeepSeek, but most suites here exercise the StepFun
+  // transport explicitly. Pin it so a default change never silently rewrites what
+  // these tests are asserting.
+  mainProvider: "stepfun",
   requestTimeoutMs: 60,
   bodyLimitBytes: 64 * 1024,
   ...overrides,

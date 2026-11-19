@@ -25,8 +25,14 @@ export const INTENT_BUDGET_MS = 90_000;
 /** Main planning provider. Unset or unrecognized keeps today's StepFun path. */
 export type MainProvider = "stepfun" | "deepseek";
 
+/**
+ * Main planner provider. DeepSeek is the default because it is materially faster
+ * and cheaper than the StepFun plan path; `VIVIC_MAIN_PROVIDER=stepfun` keeps the
+ * old behaviour, and `app.ts` falls back to a saved StepFun row when a deployment
+ * has no DeepSeek key at all.
+ */
 export const parseMainProvider = (value: string | undefined): MainProvider =>
-  value?.trim().toLowerCase() === "deepseek" ? "deepseek" : "stepfun";
+  value?.trim().toLowerCase() === "stepfun" ? "stepfun" : "deepseek";
 
 /**
  * Web-search provider chain. `auto` (default) tries the free, keyless Bing
