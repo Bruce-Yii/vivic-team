@@ -59,6 +59,8 @@ export interface FullDuplexSnapshot {
   lastIntent: string | null;
   interruptedContext: InterruptedSpeechContext | null;
   pendingConstraints: string[];
+  /** Read-only projection of the Host's real decision task (null before the first task). */
+  task: TaskProjection | null;
   error: string | null;
 }
 
@@ -135,6 +137,7 @@ let snapshot: FullDuplexSnapshot = {
   lastIntent: null,
   interruptedContext: null,
   pendingConstraints: [],
+  task: null,
   error: null,
 };
 
@@ -184,6 +187,9 @@ export const setFullDuplexTaskIdGetter = (handler: (() => string | null) | null)
 
 export const setFullDuplexTaskProjection = (projection: TaskProjection | null) => {
   currentTaskProjection = projection;
+  // The overlay is a read-only mirror of Host task state; republish so the UI
+  // shows the real step / receipt / version instead of a local guess.
+  update({ task: projection });
 };
 
 export const getFullDuplexTaskProjection = (): TaskProjection | null => currentTaskProjection;
