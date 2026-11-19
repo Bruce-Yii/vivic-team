@@ -2,6 +2,12 @@ import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
+/**
+ * Billing-plan base. Legacy: generations there require a StepFun Coding-Plan
+ * subscription and answer HTTP 400 for a normal pay-as-you-go key. It is kept
+ * only as an explicit opt-in (STEPFUN_BASE_URL) and for the plan MCP search
+ * endpoint; it is no longer the default.
+ */
 export const STEPFUN_PLAN_BASE_URL = "https://api.stepfun.com/step_plan/v1";
 /**
  * Official StepFun API base. Speech (ASR/TTS) lives here, not under the
@@ -197,7 +203,10 @@ export const loadConfig = (
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean),
-    stepfunBaseUrl: (env.STEPFUN_BASE_URL ?? STEPFUN_PLAN_BASE_URL).replace(/\/+$/, ""),
+    // Normal pay-as-you-go API by default: chat, ASR (SSE + multipart) and the model
+    // catalog all live under /v1 for ordinary keys. Operators who still hold a
+    // Coding-Plan subscription can opt in with STEPFUN_BASE_URL.
+    stepfunBaseUrl: (env.STEPFUN_BASE_URL?.trim() || STEPFUN_API_BASE_URL).replace(/\/+$/, ""),
     stepfunAsrBaseUrl: (env.VIVIC_STEPFUN_ASR_BASE_URL?.trim() || STEPFUN_API_BASE_URL).replace(/\/+$/, ""),
     mainProvider: parseMainProvider(env.VIVIC_MAIN_PROVIDER),
     deepseekBaseUrl: (env.VIVIC_DEEPSEEK_BASE_URL?.trim() || DEEPSEEK_BASE_URL).replace(/\/+$/, ""),

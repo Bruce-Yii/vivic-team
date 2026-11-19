@@ -143,9 +143,11 @@ export const createAsrRoutes = ({ config, credentials, providerStore, fetchImpl 
       signal.throwIfAborted();
       if (selected && "error" in selected) throw new AsrFailure(503, "asr-disconnected", selected.error ?? "语音识别连接不可用。");
       if (!backend && !credential) throw new AsrFailure(503, "asr-disconnected", "请先配置语音识别 ASR，或连接 StepFun API。");
-      // Exact allowlist: no proxy, ordinary billing base, redirects or alternate provider.
-      if (!backend && config.stepfunBaseUrl.replace(/\/+$/, "") !== PLAN_BASE) {
-        throw new AsrFailure(503, "asr-plan-required", "识别不可用：必须使用官方 StepFun Plan 地址，不会切换按量计费接口。");
+      // Ordinary pay-as-you-go keys are supported: `/v1/audio/transcriptions`
+      // answers 200 for them. Only reject a base that is neither the official API
+      // nor the explicit plan base, so a misconfigured proxy cannot be used.
+      if (!backend && ![PLAN_BASE, "https://api.stepfun.com/v1"].includes(config.stepfunBaseUrl.replace(/\/+$/, ""))) {
+        throw new AsrFailure(503, "asr-unsupported-base", "识别不可用：StepFun 地址必须是官方接口。");
       }
       if (new URL(c.req.url).search) throw new AsrFailure(400, "asr-invalid-input", "识别接口不接受 URL 查询参数，仅接受一个 file 音频字段。");
       const contentType = c.req.header("content-type") ?? "";

@@ -119,9 +119,9 @@ describe("POST /api/transcribe", () => {
   it("returns actionable disconnected/Plan-only failures without network calls", async () => {
     const fetchImpl = vi.fn<typeof fetch>();
     await expectFailure(await post(setup(fetchImpl, { connected: false }).app), 503, "asr-disconnected");
-    for (const base of ["https://api.stepfun.com/v1", "http://api.stepfun.com/step_plan/v1", "https://proxy.test/step_plan/v1",
+    for (const base of ["http://api.stepfun.com/step_plan/v1", "https://proxy.test/step_plan/v1",
       `${BASE}?billing=1`, "https://api.stepfun.ai/v1", "invalid"]) {
-      await expectFailure(await post(setup(fetchImpl, { base }).app), 503, "asr-plan-required");
+      await expectFailure(await post(setup(fetchImpl, { base }).app), 503, "asr-unsupported-base");
     }
     expect(fetchImpl).not.toHaveBeenCalled();
   });

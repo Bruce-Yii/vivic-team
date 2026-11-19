@@ -17,7 +17,11 @@ describe("StepFun ASR backend resolution", () => {
     expect(config.stepfunAsrBaseUrl).toBe(STEPFUN_API_BASE_URL);
     expect(config.stepfunAsrBaseUrl).not.toBe(STEPFUN_PLAN_BASE_URL);
     // The planner base stays on the plan endpoint; the two are intentionally different.
-    expect(config.stepfunBaseUrl).toBe(STEPFUN_PLAN_BASE_URL);
+    // The normal pay-as-you-go API is the default for chat AND speech; the plan base
+    // only appears when an operator opts in explicitly.
+    expect(config.stepfunBaseUrl).toBe(STEPFUN_API_BASE_URL);
+    expect(loadConfig({ STEPFUN_BASE_URL: STEPFUN_PLAN_BASE_URL } as unknown as NodeJS.ProcessEnv).stepfunBaseUrl)
+      .toBe(STEPFUN_PLAN_BASE_URL);
   });
 
   it("honours an operator override with trailing slashes trimmed", () => {

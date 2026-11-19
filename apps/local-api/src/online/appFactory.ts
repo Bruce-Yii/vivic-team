@@ -1,6 +1,6 @@
 import { createApp, type AppDeps } from "../app.js";
 import {
-  STEPFUN_PLAN_BASE_URL, INFERENCE_TIMEOUT_MS, CONNECTION_TIMEOUT_MS, SPEECH_TIMEOUT_MS, streamFeedbackEnabled,
+  STEPFUN_PLAN_BASE_URL, STEPFUN_API_BASE_URL, INFERENCE_TIMEOUT_MS, CONNECTION_TIMEOUT_MS, SPEECH_TIMEOUT_MS, streamFeedbackEnabled,
   providerDataDirFromEnv, providerPersistEnabled,
 } from "../config.js";
 import type { LocalApiConfig } from "../config.js";
@@ -25,7 +25,7 @@ export function createOnlineSessionApp(
   const config: LocalApiConfig = {
     host: "127.0.0.1", port: 0, token: session.token,
     tokenPath: "", tokenGenerated: false, allowedOrigins: [session.origin],
-    stepfunBaseUrl: STEPFUN_PLAN_BASE_URL,
+    stepfunBaseUrl: STEPFUN_API_BASE_URL,
     modelApiBaseUrl: (process.env.VIVIC_MODEL_API_BASE_URL ?? "https://edsionc.top/api/v1").replace(/\/+$/, ""),
     requestTimeoutMs: INFERENCE_TIMEOUT_MS, connectionTimeoutMs: CONNECTION_TIMEOUT_MS,
     speechTimeoutMs: SPEECH_TIMEOUT_MS, asrTimeoutMs: 30_000,

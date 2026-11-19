@@ -180,9 +180,9 @@ export const PROVIDER_PRESETS: readonly ProviderPreset[] = [
   },
   {
     id: "stepfun-plan",
-    name: "StepFun Plan（/step_plan/v1）",
+    name: "StepFun（/v1 普通 API）",
     protocol: "stepfun-plan",
-    baseUrl: "https://api.stepfun.com/step_plan/v1",
+    baseUrl: "https://api.stepfun.com/v1",
     supportsModelsEndpoint: true,
     auth: "bearer",
     defaultModels: ["step-3.5-flash", "step-3.5-flash-2603", "step-3.7-flash", "step-5-preview", "step-router-v1"],

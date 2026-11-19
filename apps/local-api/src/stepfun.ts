@@ -6,7 +6,9 @@ import { attachTokenUsage, normalizeTokenUsage, type TokenUsageDelta } from "./o
 import { describeProviderError } from "./providerError.js";
 
 /**
- * StepFun Plan client. Generations use /step_plan/v1 exclusively by default.
+ * StepFun client. Generations use the configured base URL; the default is the
+ * normal pay-as-you-go API (`/v1`). A Coding-Plan base still works when set
+ * explicitly, in which case plan-only model filtering applies.
  * The official model catalog is GET /v1/models (metadata, not generation).
  * Every network path degrades to an honest Chinese error — never throws a
  * stack trace at the HTTP layer, never fakes success. fetch is injectable
