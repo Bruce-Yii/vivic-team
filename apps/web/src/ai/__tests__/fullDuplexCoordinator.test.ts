@@ -125,7 +125,7 @@ describe("AsrGatewayClient multi-turn session rotation and error forwarding", ()
   it("rotates to a new sessionId after commit and forwards server error frames", async () => {
     const sent: Array<Record<string, unknown>> = [];
     const fakeWs = {
-      readyState: WebSocket.OPEN,
+      readyState: WebSocket.OPEN as number,
       onopen: null as (() => void) | null,
       onmessage: null as ((event: { data: string }) => void) | null,
       onerror: null as (() => void) | null,
