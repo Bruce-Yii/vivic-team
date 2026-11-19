@@ -10,32 +10,34 @@ let root: Root, host: HTMLDivElement;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-it("keeps source sky when motion is paused, zero-intensity or reduced", async () => {
+it("pauses the WebGL field and keeps the composited CSS sky when motion is off, zero-intensity or reduced", async () => {
   for (const props of [{ motionMode: "off" as const }, { intensity: 0 }, { paused: true }]) {
     await act(async () => root.render(<HarkCanvasBackdrop theme="light" palette="milk" {...props} />));
-    expect(host.querySelector('[data-hark-sky="source-shader-frozen"]')).not.toBeNull();
     expect(host.querySelector('[data-space-running="false"]')).not.toBeNull();
+    expect(host.querySelector<HTMLElement>(".hark-canvas-backdrop")?.style.backgroundColor).toMatch(/^rgb\(/);
+    expect(host.querySelector("canvas")).toBeNull();
     await act(async () => emitSpaceFeedback({ kind: "saved" }));
     expect(host.querySelector('[data-space-receipt]')).toBeNull();
   }
-  expect(host.querySelector("canvas")).toBeNull();
 });
 
-it("pauses while the document is hidden and resumes without reloading source assets", async () => {
+it("pauses while the document is hidden and restarts the field when visible again", async () => {
   await act(async () => root.render(<HarkCanvasBackdrop theme="dark" palette="ocean" motionMode="vivid" />));
-  const sky = host.querySelector('[data-hark-sky]');
   expect(host.querySelector('[data-space-running="true"]')).not.toBeNull();
+  expect(host.querySelector("canvas")).not.toBeNull();
   vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
   await act(async () => document.dispatchEvent(new Event("visibilitychange")));
   expect(host.querySelector('[data-space-running="false"]')).not.toBeNull();
+  expect(host.querySelector("canvas")).toBeNull();
   vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
   await act(async () => document.dispatchEvent(new Event("visibilitychange")));
   expect(host.querySelector('[data-space-running="true"]')).not.toBeNull();
-  expect(host.querySelector('[data-hark-sky]')).toBe(sky);
+  expect(host.querySelector("canvas")).not.toBeNull();
 });
 
 it("shows a receipt only following an explicit successful-operation signal", async () => {
@@ -64,7 +66,9 @@ it("honors a live OS reduced-motion change without reloading the page", async ()
   vi.stubGlobal("matchMedia", () => query);
   await act(async () => root.render(<HarkCanvasBackdrop theme="light" palette="milk" motionMode="vivid" />));
   expect(host.querySelector('[data-space-running="true"]')).not.toBeNull();
+  expect(host.querySelector("canvas")).not.toBeNull();
   await act(async () => { query.matches = true; listeners.forEach(fn => fn()); });
   expect(host.querySelector('[data-reduced-motion="true"]')).not.toBeNull();
   expect(host.querySelector('[data-space-running="false"]')).not.toBeNull();
+  expect(host.querySelector("canvas")).toBeNull();
 });

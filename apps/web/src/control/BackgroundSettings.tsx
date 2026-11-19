@@ -7,9 +7,9 @@ import { ORB_PALETTE_IDS, ORB_PALETTES, orbPalette } from "@/stage/orbPalette";
 import { ambientMode, type AmbientMotion } from "@/motion/spaceMotion";
 
 /**
- * Control-only sky/light preferences. Composited Hark sky avoids a GPU context;
- * choosing a palette also selects its appearance so the change is visible at
- * once on Display, the user page and here. "自动" keeps both choices.
+ * Control-only sky/light preferences. The Liquid Ether WebGL2 field sits over a composited
+ * CSS sky fallback; choosing a palette also selects its appearance so the change is visible
+ * at once on Display, the user page and here. "自动" keeps both choices.
  */
 export const BackgroundSettings = ({ host, disabled = false, resolvedTheme, compact = false }: { host: ControlHost; disabled?: boolean; resolvedTheme: "light" | "dark"; compact?: boolean }) => {
   const snapshot = useSyncExternalStore(host.subscribe, host.getSnapshot);

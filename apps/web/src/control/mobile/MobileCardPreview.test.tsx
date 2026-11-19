@@ -12,12 +12,24 @@ let host:HTMLDivElement, root:Root;
 beforeEach(() => { vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); vi.useFakeTimers(); vi.setSystemTime(now); host=document.createElement("div"); document.body.append(host); root=createRoot(host); });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 const render = async (card:CardSnapshot) => act(async () => root.render(<MobileCardPreview card={card} />));
-it("does not render a Word extract from an older paired computer", async () => {
-  await render({ id: "legacy", type: "FileCard", title: "old.docx", pinned: false,
-    file: { name: "old.docx", mediaType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", sizeBytes: 10, sha256: "a".repeat(64), parseStatus: "ready" },
-    preview: { kind: "text", body: "OLD WORD EXTRACT" } });
-  expect(host.textContent).toContain("此格式仅保留原文件下载");
-  expect(host.textContent).not.toContain("OLD WORD EXTRACT");
+it.each([
+  ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "DOCX", "old.docx"],
+  ["text/plain", "TXT", "old.txt"],
+  ["text/csv", "CSV", "old.csv"],
+  ["application/json", "JSON", "old.json"],
+] as const)("keeps a legacy %s file download-only without rendering its extract", async (mediaType, label, name) => {
+  const body = `OLD ${label} EXTRACT`;
+  await render({ id: "legacy", type: "FileCard", title: name, pinned: false,
+    file: { name, mediaType, sizeBytes: 10, sha256: "a".repeat(64), parseStatus: "ready" },
+    preview: { kind: "text", body } });
+  // Older paired computers can still send a text extract; mobile must keep only the
+  // filename and format badge, never mount the body in any renderer or attribute.
+  expect(host.querySelector("small")?.textContent).toBe(label);
+  expect(host.querySelector("h2")?.textContent).toBe(name);
+  expect(host.textContent).toBe(`${label}${name}`);
+  expect(host.textContent).not.toContain(body);
+  expect(host.innerHTML).not.toContain(body);
+  expect(host.querySelector(".mobile-card-preview-body, ul, table, img, input, textarea, select, button")).toBeNull();
 });
 
 describe("compatible mobile countdown summaries", () => {

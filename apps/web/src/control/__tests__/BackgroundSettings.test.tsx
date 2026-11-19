@@ -64,18 +64,27 @@ describe("BackgroundSettings", () => {
     expect(button.getAttribute("aria-pressed")).toBe("true");
     expect(host.setPreferences({ orbPalette: "untrusted" } as never).ok).toBe(false);
   });
-  it("synchronizes light intensity and pause without altering theme or orb", async () => {
+  it("offers pause/subtle/vivid motion without altering theme or orb and keeps intensity protocol-only", async () => {
     await render();
     const before = host.getSnapshot().preferences;
+    expect([...container.querySelectorAll("[data-vivic-motion-mode]")].map(button => button.textContent)).toEqual(["暂停", "柔和", "灵动"]);
+    expect(container.querySelector('[aria-label="光效强度"]')).toBeNull();
     await click(container.querySelector<HTMLButtonElement>('[data-vivic-motion-mode="vivid"]')!);
     expect(host.getSnapshot().preferences).toEqual({ ...before, ambientMotion: "vivid" });
-    expect(host.setPreferences({ ambientIntensity: .8 }).ok).toBe(true);
-    await render();
-    expect(container.querySelector<HTMLInputElement>('[aria-label="光效强度"]')!.value).toBe("80");
+    expect(container.querySelector<HTMLButtonElement>('[data-vivic-motion-mode="vivid"]')!.getAttribute("aria-pressed")).toBe("true");
     await click(container.querySelector<HTMLButtonElement>('[data-vivic-motion-mode="off"]')!);
-    expect(container.querySelector<HTMLInputElement>('[aria-label="光效强度"]')!.disabled).toBe(true);
-    expect(host.getSnapshot().preferences.ambientIntensity).toBe(.8);
-    expect(host.setPreferences({ ambientIntensity: 1.01 }).ok).toBe(false);
+    expect(host.getSnapshot().preferences).toEqual({ ...before, ambientMotion: "off" });
+    expect(container.querySelector<HTMLButtonElement>('[data-vivic-motion-mode="off"]')!.getAttribute("aria-pressed")).toBe("true");
+    expect(container.textContent).toContain("已暂停");
+    // The protocol/AI write path still owns ambientIntensity even though no slider is shown.
+    await act(async () => { expect(host.setPreferences({ ambientIntensity: .8 }).ok).toBe(true); });
+    await act(async () => { expect(host.setPreferences({ ambientIntensity: 1.01 }).ok).toBe(false); });
+    expect(host.getSnapshot().preferences).toEqual({ ...before, ambientMotion: "off", ambientIntensity: .8 });
+    expect(host.getSnapshot().preferences.orbPalette).toBe(before.orbPalette);
+    await act(async () => { expect(host.setPreferences({ reducedMotion: true }).ok).toBe(true); });
+    await render();
+    expect(container.textContent).toContain("已启用减少动效，背景保持静止。");
+    expect([...container.querySelectorAll("button")].every(button => !button.disabled)).toBe(true);
   });
 });
 

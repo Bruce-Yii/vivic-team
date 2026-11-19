@@ -2,7 +2,7 @@
 
 Source: `ECdison6227/rea-ui-library@26ac2724`, `platforms/web/hark`. See `SOURCE.json` for retained asset SHA-256 and D adaptations, and the project update at `docs/updates/2026-10-23-hark-full-ui.md`.
 
-`HarkPrimitives.tsx` provides source glyphs, continuous-corner surfaces, source-role task cards, tabs and frozen-sky backdrops. `HarkCanvasBackdrop.tsx` keeps synchronized Vivic tint preferences without a graphics context. `source-theme.css` retains original light/dark declarations; `hark.css` registers seven original font payloads and scopes the source roles to `.vh-hark`.
+`HarkPrimitives.tsx` provides source glyphs, continuous-corner surfaces, source-role task cards, tabs and frozen-sky backdrops. `HarkCanvasBackdrop.tsx` mounts the Liquid Ether WebGL2 field only while its motion can run, keeps a composited CSS sky as the no-WebGL/reduced-motion fallback, and keeps synchronized Vivic tint preferences. `source-theme.css` retains original light/dark declarations; `hark.css` registers seven original font payloads and scopes the source roles to `.vh-hark`.
 
 Surface layers support the original `--surface-fill`, `--surface-stroke`, `--surface-blur`, `--surface-radius` variables. Only decorative layers are clipped; editing tools and focus rings remain outside. Layout border-box measurements work under React Flow zoom.
 

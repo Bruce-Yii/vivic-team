@@ -14,7 +14,7 @@
 | 视觉 | 当次附件、Sharp 完整解码、当前模型能力检查 | 浏览器 GPT 从自生成 TEST 图片得到 `17 + 26 = 43` 并创建便笺；未使用用户图片，不代表任意图片或模型均验收 |
 | ASR | 独立选关闭、StepFun Plan、本地 Sherpaw X-ASR | 云端有合成麦克风真实请求；本地有合成 WAV/虚拟 AudioWorklet 真实 WASM；物理麦克风未验收 |
 | TTS | 独立选关闭、StepFun Plan、浏览器 `localService` 音色 | 云端有历史接口/播放记录；浏览器音色仅模拟事件测试，无实际发声验收；最新测试静音/TTS 关闭 |
-| VAD/KWS | Sherpaw Worker、默认下载并缓存、前台单句，默认不开麦；唤醒词 `vivic` | `本地语音归档`是旧版实测；`vivic` 的实际词表已核对，真人唤醒率仍待验收 |
+| VAD/KWS | Sherpaw Worker、默认下载并缓存、控制页前台持续监听（说完自动续听，可手动停止）；唤醒词 `vivic` | `本地语音归档`是旧版实测；`vivic` 的实际词表已核对，真人唤醒率仍待验收 |
 
 STT/TTS 不依附所选 LLM。可以使用 GPT 加独立 StepFun 语音、本地 ASR，或纯文字；未配置音频不阻塞模型连接。LLM、搜索、视觉、ASR 和 TTS 分别验证，不能从 OAuth 成功推导语音权限，也不因换 LLM 擅自切换语音 provider。
 
@@ -49,7 +49,7 @@ X-ASR/KWS/Silero VAD 在 Worker 运行。捕获命令后先终止监听 Worker�
 
 本地 ASR 文件结果约 7.40 秒，VAD→ASR 4.48 秒，虚拟 AudioWorklet→重采样→VAD→ASR 11.17 秒（含实时音源等待），均是合成音，不是物理麦克风或整页 GPU 场景性能保证。ASR/KWS 浏览器下载用已验证文件经 loopback 提供，不能称该耗时为公网速度；VAD 固定 HF URL 有真实 CORS/校验记录。
 
-当前默认唤醒词 `vivic` 未做真人声学命中、召回率或误唤醒率验收；历史真实 KWS 命中的是「十分钟」。物理麦克风、Safari、5 分钟监听、锁屏/睡眠唤醒仍待验收。识别结果默认自动发送，用户可关闭后检查文字；PTT/文字保留为显式降级，不自动换云服务。详见 [local-speech](local-speech.md)。
+当前默认唤醒词 `vivic` 未做真人声学命中、召回率或误唤醒率验收；历史真实 KWS 命中的是「十分钟」。物理麦克风、Safari、5 分钟监听、锁屏/睡眠唤醒仍待验收。识别结果默认自动发送，用户可关闭后检查文字；PTT/文字保留为显式降级，不自动换云服务。控制页前台持续监听且只在前台生效，停止后需再次开启。详见 [local-speech](local-speech.md)。
 
 ## 独立 TTS 与测试约束
 

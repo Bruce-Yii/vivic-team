@@ -5,7 +5,12 @@ import { useMotionVisibility, useSystemReducedMotion } from "@/motion/useMotionV
 import LiquidEther from "./LiquidEther";
 import "./space-light.css";
 
-/** React Bits Liquid Ether fluid field with Vivic phase and feedback layers. */
+/**
+ * React Bits Liquid Ether fluid field with Vivic phase and feedback layers.
+ * The composited CSS sky is always visible; the WebGL field only mounts while it can
+ * actually animate, so paused/off/reduced-motion/offscreen states never create a
+ * graphics context or keep simulating invisible frames.
+ */
 export function HarkCanvasBackdrop({ theme, palette, paused = false, className = "absolute inset-0", layer, motionMode = "subtle", intensity = 0.55, phase = "idle" }: {
   theme: "light" | "dark"; palette: PaletteId; paused?: boolean; className?: string; layer?: string;
   motionMode?: AmbientMotion; intensity?: number; phase?: SpacePhase;
@@ -41,7 +46,7 @@ export function HarkCanvasBackdrop({ theme, palette, paused = false, className =
   return <div ref={ref} className={`hark-canvas-backdrop pointer-events-none overflow-hidden ${className}`} aria-hidden="true" style={style}
     data-vivic-layer={layer} data-vivic-atmosphere={palette} data-vivic-atmosphere-theme={theme} data-reduced-motion={reduced || undefined}
     data-space-motion={mode} data-space-phase={phase} data-space-running={running}>
-    <LiquidEther
+    {running && <LiquidEther
       className="hark-liquid-ether"
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
       colors={[...ATMOSPHERE_PALETTES[palette].swatch]}
@@ -62,7 +67,7 @@ export function HarkCanvasBackdrop({ theme, palette, paused = false, className =
       lightMode={theme === "light"}
       backgroundColor="transparent"
       maxDevicePixelRatio={1.5}
-    />
+    />}
     <div className="hark-space-focus" />
     <div className="hark-space-activity" />
     {feedback && running && <div key={feedback.sequence} className="hark-space-receipt" data-space-receipt={feedback.kind} />}

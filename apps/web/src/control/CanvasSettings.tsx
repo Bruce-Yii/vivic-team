@@ -10,7 +10,6 @@ import type { DisplayPreferences } from "@/sync/protocol";
 export interface CanvasSettingsProps {
   host: ControlHost;
   disabled?: boolean;
-  selectedCardId?: string | null;
   compact?: boolean;
   toolsOnly?: boolean;
 }

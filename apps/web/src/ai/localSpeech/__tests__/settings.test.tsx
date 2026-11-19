@@ -23,7 +23,7 @@ describe("local speech settings", () => {
     const root = createRoot(container), manager = fakeManager();
     await act(async () => root.render(<LocalSpeechSettings manager={manager as unknown as LocalSpeechModelManager} />));
     expect(manager.refresh).toHaveBeenCalledTimes(1); expect(manager.prepareDefaultModels).not.toHaveBeenCalled(); expect(manager.prepareModel).not.toHaveBeenCalled();
-    expect(container.textContent).toContain("vivic"); expect(container.textContent).toContain("默认不监听");
+    expect(container.textContent).toContain("vivic"); expect(container.textContent).toContain("持续监听");
     expect(container.textContent).toContain("169.23 MB"); expect(container.textContent).toContain("13.08 MB");
     await act(async () => (container.querySelector('[data-local-speech-model="asr-zh"] button') as HTMLButtonElement).click());
     expect(manager.prepareModel).toHaveBeenCalledWith("asr-zh");
