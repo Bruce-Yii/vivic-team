@@ -167,6 +167,10 @@ describe("DeepSeek app path", () => {
       expect(body.kind).toBe("error");
       expect(body.message).toContain("DEEPSEEK_API_KEY");
       expect(body.message).toContain("不会回退 StepFun");
+      expect(body.usedProvider).toBe("rules-offline");
+      // The generic offline copy would tell the user to connect StepFun, which
+      // this mode rejects; the DeepSeek answer must not fall back to it.
+      expect(body.message).not.toContain("连接 GPT 或 StepFun");
       expect(fetchImpl).not.toHaveBeenCalled();
     } finally { app.dispose(); }
   });

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CardRecord } from "@vivic/contracts";
 import { CredentialStore } from "../src/credentials.js";
 import { resolveClockTimes, resolveDates, resolveIsoDates } from "../src/intent/dateResolve.js";
@@ -250,6 +250,14 @@ const setup = (replies: ToolReply[]) => {
 
 describe("B12: 习惯打卡：每天背单词，本周一到周三做到了", () => {
   const B12 = "习惯打卡：每天背单词，本周一到周三做到了";
+  // The user's words are converted against the request's own "now". Pin the
+  // clock at NOW (Tuesday 2026-11-03 in Shanghai) so 本周 means the week this
+  // file's MON_WED fixture names, instead of whatever day CI runs on.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => vi.useRealTimers());
 
   it("builds a HabitHeatmapCard end to end without asking", async () => {
     const f = setup([{ name: "clarify", args: { missing: "date", question: "这周哪几天打了卡？" } }]);

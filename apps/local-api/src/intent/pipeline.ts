@@ -655,8 +655,12 @@ const runLegacyIntent = async (
       // No model to plan with: an informational question still goes online.
       const offlineQuery = deps.search && !hasImages && !continuation ? offlineSearchQuery(req.text) : null;
       if (offlineQuery) return await runIntent({ text: `搜索 ${offlineQuery}`, canvasContext: req.canvasContext }, deps, budget.signal, true);
-      if (!deps.planner && deps.mainProvider === "deepseek") {
+      if (deps.mainProvider === "deepseek" && (!deps.planner || (deps.planner.provider === "deepseek" && !deps.planner.connected))) {
         // Never fall through to a StepFun key: the operator asked for DeepSeek.
+        // A disconnected DeepSeek planner is the same situation as no planner at
+        // all — the host builds one even without a key — so it gets the same
+        // actionable answer instead of the generic "connect GPT or StepFun"
+        // copy, which this mode cannot honour (StepFun keys are rejected).
         return { kind: "error", usedProvider: "rules-offline",
           message: "未配置 DEEPSEEK_API_KEY，DeepSeek 官方快路径不可用。请设置该环境变量并重启本地服务；不会回退 StepFun。" };
       }

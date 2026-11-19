@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "0.6",
+  "requestId": "example-search-results",
+  "canvasId": "example-canvas",
+  "spokenText": "找到两条来源，已整理成一张结果卡。",
+  "actions": [
+    {
+      "type": "card.create",
+      "card": {
+        "id": "example-search-result",
+        "type": "SearchResultCard",
+        "variant": "standard",
+        "displayProps": {
+          "title": "示例：网上资料的摘要卡",
+          "summary": "只保留可点开的来源和一句概括，正文留在链接页面里。",
+          "sourceLabel": "example.test"
+        },
+        "sourceData": {},
+        "sources": [
+          {
+            "title": "示例来源页（网页）",
+            "kind": "web",
+            "url": "https://example.test/article",
+            "fetchedAt": "2026-10-16T09:00:00.000Z",
+            "provider": "bing",
+            "readFullPage": false
+          },
+          {
+            "title": "示例来源（服务）",
+            "kind": "service",
+            "fetchedAt": "2026-10-16T09:00:00.000Z",
+            "provider": "exa",
+            "readFullPage": true
+          }
+        ],
+        "layout": { "x": 0, "y": 0, "width": 340, "height": 220, "pinned": false },
+        "metadata": { "createdAt": "2026-10-16T09:00:00.000Z", "updatedAt": "2026-10-16T09:00:00.000Z" }
+      }
+    }
+  ]
+}

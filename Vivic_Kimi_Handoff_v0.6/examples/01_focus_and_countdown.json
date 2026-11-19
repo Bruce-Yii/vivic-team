@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "0.6",
+  "requestId": "example-focus-and-countdown",
+  "canvasId": "example-canvas",
+  "spokenText": "已新建 25 分钟倒计时，并聚焦到这张卡片。",
+  "actions": [
+    {
+      "type": "card.create",
+      "card": {
+        "id": "example-countdown",
+        "type": "CountdownCard",
+        "variant": "minimal",
+        "displayProps": {},
+        "sourceData": {
+          "targetAt": "2026-10-16T09:25:00.000Z",
+          "startedAt": "2026-10-16T09:00:00.000Z",
+          "timeZone": "Asia/Shanghai"
+        },
+        "sources": [],
+        "layout": { "x": 0, "y": 0, "width": 288, "height": 160, "pinned": false },
+        "metadata": { "createdAt": "2026-10-16T09:00:00.000Z", "updatedAt": "2026-10-16T09:00:00.000Z" }
+      }
+    },
+    { "type": "card.focus", "targetId": "example-countdown" }
+  ]
+}

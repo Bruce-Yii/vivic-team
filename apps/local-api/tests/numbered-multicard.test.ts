@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CardRecord, IntentRouteId } from "@vivic/contracts";
 import { CredentialStore } from "../src/credentials.js";
 import { splitClauses } from "../src/decision/split.js";
@@ -45,6 +45,14 @@ const numbered = [
 ] as const;
 
 describe("numbered multi-intent: every item is built, never only the first card", () => {
+  // "周四" resolves to the next upcoming Thursday from the request's own
+  // "now", so the expected weekStart (2026-11-02, Monday) must be pinned:
+  // otherwise the same assertion names a different week every day.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-02T02:00:00.000Z")); // 10:00 Monday, Shanghai
+  });
+
   it.each(numbered)("%s list builds one countdown and both schedules", async (_label, text) => {
     const f = setup();
     const result = await runIntent({ text, canvasContext: context() }, f.deps);

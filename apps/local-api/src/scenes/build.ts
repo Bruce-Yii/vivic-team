@@ -5,7 +5,7 @@ import {
 } from "@vivic/contracts";
 import { addDays, dayOfWeek, isoOf, mondayOf, monthOf, parseIso, daysBetween, type Ymd } from "./calendar.js";
 import {
-  groundedDate, groundedDoi, groundedNumber, groundedPartialDate, groundedPhrase, groundedTime, groundedUrl, groundedWeekday, overlapRatio, type Corpus,
+  buildCorpus, groundedDate, groundedDoi, groundedNumber, groundedPartialDate, groundedPhrase, groundedTime, groundedUrl, groundedWeekday, overlapRatio, type Corpus,
 } from "./grounding.js";
 import { resolveDates } from "../intent/dateResolve.js";
 import type { ParsedScene, SceneDataOf } from "./payload.js";
@@ -93,7 +93,12 @@ function groundingIssue(scene: ParsedScene, context: SceneBuildContext): SceneIs
       // A plan the user asked for ("下周的健身计划") has no weekdays in the
       // request: which days to train is the plan's own content, so only clock
       // times stay grounded. If the user did name days/dates, they still bind.
-      const plannedWeek = context.corpus.weekdays.size === 0;
+      // "The user named a day" is read from the user's own words only: a note
+      // already on the canvas ("周三和设计讨论…") is evidence for other fields,
+      // but it cannot turn a proposed plan into a request for those days.
+      const own = context.requestText === undefined ? context.corpus
+        : buildCorpus([context.requestText], { now: context.now, timeZone: context.timeZone });
+      const plannedWeek = own.weekdays.size === 0;
       return first(...scene.data.events.flatMap(event => [
         event.date ? plannedWeek ? null : day(event.date, "events.date") : event.day !== undefined && !plannedWeek
           && !groundedWeekday(context.corpus, event.day) && !evidence.weekdays.has(event.day)
