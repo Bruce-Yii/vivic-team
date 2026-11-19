@@ -3,6 +3,7 @@ import {
   appendWorkingConstraint,
   buildInterruptedSpeechContext,
   classifyIntent,
+  looksLikeSelfEcho,
   clearWorkingConstraints,
   consumeWorkingConstraints,
   getWorkingConstraints,
@@ -325,6 +326,15 @@ export const startFullDuplex = async (options: FullDuplexStartOptions = {}): Pro
 
           if (aiSpeakingNow) {
             const speechBefore = getSpeechSnapshot();
+            // Speaker echo can reach the microphone even with AEC enabled. If the
+            // transcript is just our own sentence coming back, treat it as silence:
+            // acting on it would let the assistant interrupt itself (measured 25% of
+            // assistant lines contain a stop/constraint keyword).
+            if (looksLikeSelfEcho(trimmed, speechBefore.text)) {
+              unduckSpeech();
+              update({ lastIntent: "self_echo" });
+              return;
+            }
             const intent = handleUserTranscript(trimmed);
             update({ lastIntent: intent });
 

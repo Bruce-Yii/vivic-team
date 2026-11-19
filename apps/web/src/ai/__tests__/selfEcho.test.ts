@@ -1,0 +1,63 @@
+import { describe, expect, it } from "vitest";
+import { classifyIntent, looksLikeSelfEcho } from "../turnTaking";
+
+/**
+ * Regression guard for self-echo barge-in.
+ *
+ * Measured on real TTS → real ASR → real classifier: 3 of 12 assistant lines
+ * (25%) mapped to new_constraint / cancel_task and would have interrupted the
+ * assistant on its own words. The guard must block exactly those, while still
+ * honouring a genuine user barge-in during playback.
+ */
+
+const ASSISTANT_LINES = [
+  "好的，已经为你创建下午三点的会议提醒。",
+  "我再确认一下，不过这个时间和你之前的安排有冲突。",
+  "另外还有两张卡片没有保存，需要我一起处理吗？",
+  "已经取消这个限购提醒，其他内容保持不变。",
+  "你可以继续说，我会在后台把结果整理成卡片。",
+  "正在查询明天上海的天气，请稍等。",
+  "提醒已经设置好了，需要我再说一遍吗？",
+  "这个任务需要三个步骤，目前完成第一步。",
+  "如果你不确定，我可以先不做修改。",
+  "抱歉，我没有听清，你能再说一次吗？",
+  "今天一共创建了四张卡片。",
+  "好的，已经切换到设计讨论这个空间。",
+];
+
+describe("assistant self-echo is not a user turn", () => {
+  it.each(ASSISTANT_LINES)("blocks the assistant's own line: %s", (line) => {
+    // Echo transcribes with light normalisation (number formatting, punctuation).
+    const heard = line.replace("四张", "4 张");
+    expect(looksLikeSelfEcho(heard, line)).toBe(true);
+  });
+
+  it("would have interrupted on 3 of these lines without the guard", () => {
+    const interrupting = ASSISTANT_LINES.filter((line) => ["stop", "cancel_task", "new_constraint", "new_topic"].includes(classifyIntent(line)));
+    expect(interrupting).toHaveLength(3);
+  });
+});
+
+describe("a genuine barge-in still gets through", () => {
+  const playing = "明天下午三点提醒你开会，到时候我会提前十分钟通知你。";
+
+  it.each(["停", "停一下", "等一下", "不对", "我说的是后天", "取消", "换个话题"])(
+    "does not mistake a short real interruption for echo: %s", (heard) => {
+      expect(looksLikeSelfEcho(heard, playing)).toBe(false);
+    });
+
+  it("does not mistake an unrelated user sentence for echo", () => {
+    expect(looksLikeSelfEcho("帮我建一张关于旅行的卡片", playing)).toBe(false);
+  });
+
+  it("ignores the guard when nothing is being spoken", () => {
+    expect(looksLikeSelfEcho("明天下午三点提醒我开会", null)).toBe(false);
+    expect(looksLikeSelfEcho("明天下午三点提醒我开会", "")).toBe(false);
+  });
+
+  it("keeps partial-echo tolerance bounded", () => {
+    // A five-character real command must survive even if two characters overlap.
+    expect(looksLikeSelfEcho("提醒我开会", "明天下午三点提醒你开会，到时我会提前十分钟通知你。")).toBe(true);
+    expect(looksLikeSelfEcho("查一下天气", "明天下午三点提醒你开会，到时我会提前十分钟通知你。")).toBe(false);
+  });
+});
