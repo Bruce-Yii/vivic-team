@@ -1,7 +1,7 @@
 import type { DecisionExecutionReceipt, DecisionTaskRequest } from "@vivic/contracts";
 import { canvasStore, type CanvasStore } from "@/state/canvasStore";
 import type { ControlHost } from "@/sync/controlHost";
-import { buildCanvasContext, postIntent, type IntentResult } from "./api";
+import { buildCanvasContext, postIntent, type IntentResult, type InterruptedSpeechPayload } from "./api";
 import { IntentResultSchema } from "./intentStream";
 import { executeHostOperation } from "./hostOperation";
 import { newId } from "@/lib/id";
@@ -17,6 +17,7 @@ export interface DecisionTaskOptions {
   withCommit?<T>(write: () => T): T;
   attachments?: Parameters<typeof postIntent>[3]; continuation?: Parameters<typeof postIntent>[4];
   deviceLocation?: Parameters<typeof postIntent>[5]; onProgress?: Parameters<typeof postIntent>[6];
+  interruptedSpeech?: InterruptedSpeechPayload;
 }
 export type DecisionTaskResult = IntentResult & { executed?: boolean; handled?: boolean };
 
@@ -50,7 +51,8 @@ export async function runDecisionTask(options: DecisionTaskOptions): Promise<Dec
     for (let step = 0; step < 12; step++) {
       if (!current()) return { kind: "error", message: executed ? "后续操作已停止，已保存的更改仍保留。" : "本次请求已取消。", executed, handled: true };
       const raw = await request(text, context(), signal, step === 0 ? options.attachments : undefined,
-        step === 0 ? options.continuation : undefined, options.deviceLocation, options.onProgress, task);
+        step === 0 ? options.continuation : undefined, options.deviceLocation, options.onProgress, task,
+        step === 0 ? options.interruptedSpeech : undefined);
       received = true;
       const result = IntentResultSchema.parse(raw);
       if (!current()) return { kind: "error", message: executed ? "后续操作已停止，已保存的更改仍保留。" : "本次请求已取消。", executed, handled: true };

@@ -10,7 +10,15 @@ import { UserCanvasControls } from "./UserCanvasControls";
 import { ConnectedSources } from "@/connections/ConnectedSources";
 import { FileUploadButton } from "@/files/FileUploadButton";
 import { ReminderCenter } from "./ReminderCenter";
-import { startFullDuplex, stopFullDuplex, subscribeFullDuplex, getFullDuplexSnapshot, setFullDuplexCommandHandler } from "@/ai/fullDuplex";
+import {
+  startFullDuplex,
+  stopFullDuplex,
+  subscribeFullDuplex,
+  getFullDuplexSnapshot,
+  setFullDuplexCommandHandler,
+  interruptByUi,
+  type FullDuplexCommandOptions,
+} from "@/ai/fullDuplex";
 
 interface ChatPageProps {
   hidden: boolean;
@@ -24,7 +32,7 @@ interface ChatPageProps {
   suggestions: string[];
   backendOnline: boolean | null;
   busy: boolean;
-  onSubmit: (text: string, attachments?: Attachment[], options?: { cancelRunning?: boolean }) => void;
+  onSubmit: (text: string, attachments?: Attachment[], options?: FullDuplexCommandOptions) => void;
   onPickClarify: (candidate: ResolvedCard) => void;
   onPreviewClarify: (candidate: ResolvedCard) => void;
   onCancelClarify: () => void;
@@ -47,7 +55,12 @@ export const ChatPage = ({ hidden, host, theme, feedback, notice, onOpenSettings
   const [fd, setFd] = useState(getFullDuplexSnapshot());
   useEffect(() => { const unsub = subscribeFullDuplex(() => setFd(getFullDuplexSnapshot())); return () => { unsub(); }; }, []);
   useEffect(() => {
-    setFullDuplexCommandHandler((text: string, options?: { cancelRunning?: boolean }) => composer.onSubmit(text, undefined, options));
+    setFullDuplexCommandHandler((text: string, options?: FullDuplexCommandOptions) => {
+      const mergedText = options?.constraints?.length
+        ? `${text}（补充约束：${options.constraints.join("；")}）`
+        : text;
+      composer.onSubmit(mergedText, undefined, options);
+    });
     return () => setFullDuplexCommandHandler(null);
   }, [composer.onSubmit]);
   const [fileMessage, setFileMessage] = useState("");
@@ -73,17 +86,18 @@ export const ChatPage = ({ hidden, host, theme, feedback, notice, onOpenSettings
     <div className="vivic-chat" hidden={hidden} data-vivic-chat {...drop.handlers}>
       <UserCardLayer host={host} theme={theme} layerRef={drop.layerRef} receiving={drop.receiving} notice={drop.notice} onNotice={drop.setNotice} />
       {fd.status !== "idle" && <div data-vivic-fd-status style={{position:"fixed",bottom:12,left:12,zIndex:50,background:"rgba(0,0,0,.7)",color:"#fff",padding:"6px 10px",borderRadius:8,fontSize:12,maxWidth:320}}>
-        FD: {fd.status} {fd.userSpeaking?"(user)":""} {fd.aiSpeaking?"(ai)":""}<br/>
+        FD #{fd.turnId}: {fd.status} {fd.userSpeaking?"(user)":""} {fd.aiSpeaking?"(ai)":""}<br/>
         {fd.lastTranscript ? `“${fd.lastTranscript}” → ${fd.lastIntent}` : ""}
+        {fd.pendingConstraints.length > 0 ? <><br/>待应用约束: {fd.pendingConstraints.length}</> : null}
         {fd.error ? `错误: ${fd.error}` : ""}
       </div>}
       <header className="vivic-chat-header">
         <div className="vivic-header-start">
-          <button type="button" className="vivic-round-button" onClick={onOpenSettings}
+          <button type="button" className="vivic-round-button" onClick={() => { interruptByUi("navigation"); onOpenSettings(); }}
             aria-label="设置" title="设置" data-vivic-open-settings>
             <HarkIcon name="gear" size={20} aria-hidden="true" />
           </button>
-          <button type="button" className="vivic-round-button" onClick={onOpenServices}
+          <button type="button" className="vivic-round-button" onClick={() => { interruptByUi("navigation"); onOpenServices(); }}
             aria-label="应用与生活服务" title="应用与生活服务" data-vivic-open-services>
             <HarkIcon name="apps" size={20} aria-hidden="true" />
           </button>
@@ -100,6 +114,7 @@ export const ChatPage = ({ hidden, host, theme, feedback, notice, onOpenSettings
         {fileMessage && <p className="vivic-file-message vivic-upload-status" role="status">{fileMessage}</p>}
         <ChatStatusLine text={displayFeedback} visible={fresh || sticky} busy={composer.busy} onCancel={composer.onCancel} />
         <ChatComposer {...composer} onOpenConnectionSettings={() => {
+          interruptByUi("navigation");
           if (window.location.hash !== "#settings-connections") window.location.hash = "settings-connections";
           onOpenSettings();
         }} menuActions={close => <>
@@ -110,11 +125,3 @@ export const ChatPage = ({ hidden, host, theme, feedback, notice, onOpenSettings
     </div>
   );
 };
-
-
-
-
-
-
-
-

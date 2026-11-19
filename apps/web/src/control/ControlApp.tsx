@@ -30,8 +30,8 @@ import { DataActions } from "./DataActions";
 import type { ReminderNotice } from "@/reminders/reminders";
 import { deliveredNoticeCurrent } from "@/reminders/reminders";
 import { cancelVoiceInput, getVoiceInputSnapshot, isVoiceInputBusy, subscribeVoiceInput } from "@/ai/voiceInput";
-import { setFullDuplexTaskIdGetter, setFullDuplexCancelTaskByIdHandler, setFullDuplexTaskProjection } from "@/ai/fullDuplex";
-import { projectTask } from "@/ai/taskProjection";
+import { setFullDuplexTaskIdGetter, setFullDuplexCancelTaskByIdHandler, setFullDuplexTaskProjection, getFullDuplexTaskProjection, type FullDuplexCommandOptions } from "@/ai/fullDuplex";
+import { inferTaskMutationClass, projectTask } from "@/ai/taskProjection";
 import { CanvasSettings } from "./CanvasSettings";
 import { RemindersSection } from "./RemindersSection";
 import { NotificationSettings } from "./NotificationSettings";
@@ -184,6 +184,9 @@ export const ControlApp = () => {
     host?.setActivity(current.requestId, null);
     setBusy(false);
     setFeedback("已取消本次请求");
+    // Cancel is a terminal state: the full-duplex layer must stop treating this task
+    // as superseding-safe work immediately.
+    setFullDuplexTaskProjection(projectTask({ id: current.taskId, status: "cancelled", message: "已取消本次请求" }));
   }, [host, setFeedback]);
 
   useEffect(() => {
@@ -436,7 +439,7 @@ export const ControlApp = () => {
   }, [host, clarify, setFeedback]);
 
   const submitCommand = useCallback(
-    (text: string, attachments?: Attachment[], options?: { cancelRunning?: boolean }) => {
+    (text: string, attachments?: Attachment[], options?: FullDuplexCommandOptions) => {
       if (!host) return;
       const snap = host.getSnapshot();
       if (!snap.activeCanvasId || snap.ownerMode !== "owner") return;
@@ -475,6 +478,11 @@ export const ControlApp = () => {
       const requestId = newId("intent");
       const taskId = (continuation ? previous?.taskId : undefined) ?? newId("task");
       lastTaskIdRef.current = taskId;
+      // Expose the new task to the full-duplex layer immediately, with a conservative
+      // read-only / mutating classification so a barge-in cannot silently supersede a
+      // write that has already been accepted.
+      const mutationClass = inferTaskMutationClass(trimmed);
+      setFullDuplexTaskProjection(projectTask({ id: taskId, status: "running", message: "任务运行中", mutationClass }));
       const controller = new AbortController();
       const expiresAt = Date.now() + INTENT_TIMEOUT_MS;
       const submittedAt = Date.now();
@@ -584,6 +592,7 @@ export const ControlApp = () => {
             host, text: trimmed, signal: controller.signal, isCurrent,
             taskId,
             attachments, continuation, deviceLocation,
+            interruptedSpeech: options?.interruptedContext ?? undefined,
             onProgress: event => {
               if (!isCurrent() || event.status !== "started" || event.stage === "total") return;
               const current = pending.current!;
@@ -627,7 +636,7 @@ export const ControlApp = () => {
           cancelShortFeedback(requestId);
           if (result.task?.id) {
             lastTaskIdRef.current = result.task.id;
-            setFullDuplexTaskProjection(projectTask({ id: result.task.id, status: result.task.status, message: result.message ?? "" }));
+            setFullDuplexTaskProjection(projectTask({ id: result.task.id, status: result.task.status, message: result.message ?? "", mutationClass: result.task.id === taskId ? mutationClass : inferTaskMutationClass(trimmed) }));
           }
           setBackendOnline(true);
           // In explicit legacy fallback, retain the old exact target chooser.
@@ -721,6 +730,18 @@ export const ControlApp = () => {
             pending.current = null;
             host.setActivity(requestId, null);
             setBusy(false);
+            // No terminal task state was published for this request (abort, timeout or
+            // transport error): clear the projection so a stale "running" flag cannot
+            // keep the full-duplex layer believing a write is still in flight.
+            const currentProjection = getFullDuplexTaskProjection();
+            if (currentProjection?.taskId === taskId && currentProjection.isActive) {
+              setFullDuplexTaskProjection(projectTask({
+                id: taskId,
+                status: controller.signal.aborted ? "cancelled" : "unknown",
+                message: controller.signal.aborted ? "已取消本次请求" : "任务状态待确认",
+                mutationClass,
+              }));
+            }
           }
         }
       })();
@@ -772,7 +793,7 @@ interface ShellProps {
   feedback: string | null;
   suggestions: string[];
   backendOnline: boolean | null;
-  onSubmit: (text: string, attachments?: Attachment[]) => void;
+  onSubmit: (text: string, attachments?: Attachment[], options?: FullDuplexCommandOptions) => void;
   onPickClarify: (candidate: ResolvedCard) => void;
   onCancelClarify: () => void;
   onBackendChange: (online: boolean) => void;

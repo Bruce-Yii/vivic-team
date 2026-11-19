@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactN
 import { ComposerMenu } from "./ComposerMenu";
 import { HarkIcon, HarkSurface } from "@/components/hark/HarkPrimitives";
 import { getSpeechSnapshot, subscribeSpeech } from "@/ai/speech";
+import { interruptByUi } from "@/ai/fullDuplex";
 import type { ResolvedCard } from "@/commands/references";
 import type { CommandClarifyAction } from "@/commands/parse";
 import { VoiceInput, VoiceNote } from "./VoiceInput";
@@ -110,6 +111,7 @@ export const ChatComposer = ({
   const submit = () => {
     const value = text.trim();
     if (!value || imageProcessing || (attachment && !visionAvailable)) return;
+    interruptByUi("typing");
     const images = attachment ? [attachment] : undefined;
     setWakeCancelKey(value => value + 1);
     setAttachment(null); setImageReset(value => value + 1);
@@ -147,7 +149,7 @@ export const ChatComposer = ({
         {clarify && <div className="vivic-chip-row" data-vivic-clarify>
           {clarify.candidates.map((c, index) => (
             <button key={c.card.id} type="button" className="vivic-chip"
-              onClick={() => onPickClarify(c)}
+              onClick={() => { interruptByUi("click"); onPickClarify(c); }}
               onPointerEnter={() => onPreviewClarify?.(c)}
               onFocus={() => onPreviewClarify?.(c)}
               data-vivic-clarify-candidate
@@ -155,16 +157,16 @@ export const ChatComposer = ({
               {clarify.numbers?.[index] ?? index + 1}号 · {c.label}
             </button>
           ))}
-          <button type="button" className="vivic-chip vivic-chip-quiet" onClick={onCancelClarify}>取消</button>
+          <button type="button" className="vivic-chip vivic-chip-quiet" onClick={() => { interruptByUi("click"); onCancelClarify(); }}>取消</button>
         </div>}
         {suggestions.length > 0 && <div className="vivic-chip-row" data-vivic-data-suggestions>
           {suggestions.map(suggestion => <button key={suggestion} type="button" className="vivic-chip"
-            disabled={disabled || busy} onClick={() => { setText(""); onSubmit(suggestion); }}>{suggestion}</button>)}
+            disabled={disabled || busy} onClick={() => { interruptByUi("click"); setText(""); onSubmit(suggestion); }}>{suggestion}</button>)}
         </div>}
         {unappliedVoice && <HarkSurface className="vivic-composer-card" data-vivic-unapplied-voice>
           <p>{unappliedVoice}</p>
           <p className="vivic-composer-card-hint">你在识别期间改过输入，已保留现有文字。</p>
-          <button type="button" className="vivic-chip" onClick={() => { setText(unappliedVoice); setUnappliedVoice(null); }}>使用这段转写</button>
+          <button type="button" className="vivic-chip" onClick={() => { interruptByUi("click"); setText(unappliedVoice); setUnappliedVoice(null); }}>使用这段转写</button>
         </HarkSurface>}
         {(speech.status === "loading" || speech.status === "playing") && <div className="vivic-composer-progress" data-vivic-command-progress>
           {speech.status === "playing" ? <HarkIcon name="volume" size={16} aria-hidden="true" /> : <HarkIcon name="refresh" className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
@@ -188,7 +190,12 @@ export const ChatComposer = ({
         <input
           className="vivic-composer-input"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            if (!text && e.target.value.length > 0 && (speech.status === "playing" || speech.status === "loading")) {
+              interruptByUi("typing");
+            }
+            setText(e.target.value);
+          }}
           placeholder="给 Vivic 发消息"
           disabled={disabled}
           aria-label="指令输入"
@@ -201,7 +208,7 @@ export const ChatComposer = ({
               if (event.key === "Enter") event.preventDefault();
               return;
             }
-            if (event.key === "Escape" && clarify) { event.preventDefault(); onCancelClarify(); }
+            if (event.key === "Escape" && clarify) { event.preventDefault(); interruptByUi("click"); onCancelClarify(); }
           }}
         />
         <ComposerMenu>{close => <>

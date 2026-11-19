@@ -16,6 +16,25 @@ export { intentStageLabel } from "./intentStream";
  * → same-origin proxy → loopback API body (never stored client-side).
  */
 
+export interface InterruptedSpeechPayload {
+  reason: "voice" | "ui";
+  requestId?: string | null;
+  spokenText: string;
+  truncated: boolean;
+  playedMs?: number | null;
+}
+
+/** Whitelist only the strict `/api/intent` schema fields (strips client-only keys like `interrupted` / `fullText`). */
+export const serializeInterruptedSpeech = (
+  value: InterruptedSpeechPayload,
+): InterruptedSpeechPayload => ({
+  reason: value.reason,
+  ...(value.requestId !== undefined ? { requestId: value.requestId ? value.requestId.slice(0, 128) : null } : {}),
+  spokenText: value.spokenText.slice(0, 200),
+  truncated: value.truncated,
+  ...(value.playedMs !== undefined ? { playedMs: value.playedMs } : {}),
+});
+
 export interface ProviderStatus {
   name: "stepfun" | "gpt";
   connected: boolean;
@@ -226,9 +245,11 @@ export const postIntent = async (
   deviceLocation?: DeviceFix | null,
   onProgress?: (event: IntentProgress) => void,
   task?: DecisionTaskRequest,
+  interruptedSpeech?: InterruptedSpeechPayload,
 ): Promise<IntentResult> => {
   const extensionDefinitions = enabledPlannerDefinitions();
   const body = { text, canvasContext, ...(attachments?.length ? { attachments } : {}), ...(continuation ? { continuation } : {}),
+    ...(interruptedSpeech ? { interruptedSpeech: serializeInterruptedSpeech(interruptedSpeech) } : {}),
     ...(deviceLocation ? { deviceLocation } : {}), ...(extensionDefinitions.length ? { extensionDefinitions } : {}), ...(task ? { task } : {}) };
   if (!onProgress) return IntentResultSchema.parse(await post("/api/intent", body, signal));
   const response = await fetch("/api/intent", { method: "POST", headers: { "content-type": "application/json", accept: "text/event-stream" }, body: JSON.stringify(body), signal });

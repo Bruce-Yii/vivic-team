@@ -1,4 +1,5 @@
-import { getSpeechSnapshot, pauseSpeech, resumeSpeech, recordBargeInCandidate, confirmBargeIn } from "./speech";
+import { getSpeechSnapshot, pauseSpeech, resumeSpeech, recordBargeInCandidate, confirmBargeIn, type SpeechSnapshot } from "./speech";
+import type { TaskMutationClass } from "./taskProjection";
 import { setVadCandidateHandler, startVad, stopVad } from "./vad";
 
 export type TurnIntent = "backchannel" | "stop" | "new_constraint" | "new_topic" | "cancel_task" | "continue" | "irrelevant" | "unknown";
@@ -12,6 +13,118 @@ export interface TurnTakingState {
   taskRunning: boolean;
 }
 
+/** Captures what the user actually heard before TTS was interrupted. */
+export interface InterruptedSpeechContext {
+  interrupted: true;
+  reason: "voice" | "ui";
+  requestId: string | null;
+  fullText: string;
+  spokenText: string;
+  truncated: boolean;
+  playedMs: number | null;
+}
+
+export type TaskCancellationPolicy =
+  | "abort_immediately"
+  | "report_result_no_silent_drop"
+  | "require_confirmation";
+
+export interface WorkingContextConstraint {
+  text: string;
+  turnId: number;
+  at: number;
+}
+
+const MAX_WORKING_CONSTRAINTS = 8;
+let workingConstraints: WorkingContextConstraint[] = [];
+
+export const appendWorkingConstraint = (
+  text: string,
+  turnId: number,
+  now = Date.now(),
+): WorkingContextConstraint | null => {
+  const cleaned = text.trim();
+  if (!cleaned) return null;
+  const entry: WorkingContextConstraint = { text: cleaned, turnId, at: now };
+  workingConstraints = [...workingConstraints, entry].slice(-MAX_WORKING_CONSTRAINTS);
+  return entry;
+};
+
+export const getWorkingConstraints = (): readonly WorkingContextConstraint[] => workingConstraints;
+
+export const consumeWorkingConstraints = (): WorkingContextConstraint[] => {
+  const items = workingConstraints;
+  workingConstraints = [];
+  return items;
+};
+
+export const clearWorkingConstraints = (): void => {
+  workingConstraints = [];
+};
+
+/**
+ * Aligns interrupted TTS playback with downstream conversation context so the
+ * next turn never assumes the user heard unspoken text after barge-in.
+ */
+export const buildInterruptedSpeechContext = (
+  snapshot: Pick<SpeechSnapshot, "status" | "requestId" | "text" | "wordRange" | "playbackLedger">,
+  reason: "voice" | "ui" = "voice",
+): InterruptedSpeechContext | null => {
+  const fullText = snapshot.text?.trim() ?? "";
+  if (!fullText) return null;
+  if (snapshot.status !== "playing" && snapshot.status !== "loading" && snapshot.status !== "paused") {
+    return null;
+  }
+  const playedMs = snapshot.playbackLedger?.playedMs ?? null;
+  const wordEnd = snapshot.wordRange?.end;
+  if (typeof wordEnd === "number" && wordEnd > 0 && wordEnd <= fullText.length) {
+    return {
+      interrupted: true,
+      reason,
+      requestId: snapshot.requestId,
+      fullText,
+      spokenText: fullText.slice(0, wordEnd),
+      truncated: wordEnd < fullText.length,
+      playedMs,
+    };
+  }
+  if (snapshot.status === "loading" || playedMs === null || playedMs <= 0) {
+    return {
+      interrupted: true,
+      reason,
+      requestId: snapshot.requestId,
+      fullText,
+      spokenText: "",
+      truncated: true,
+      playedMs,
+    };
+  }
+  return {
+    interrupted: true,
+    reason,
+    requestId: snapshot.requestId,
+    fullText,
+    spokenText: "",
+    truncated: snapshot.playbackLedger?.completed !== true,
+    playedMs,
+  };
+};
+
+/**
+ * Enforces the safe cancellation boundary between read-only queries and
+ * mutating/side-effecting host operations.
+ */
+export const classifyTaskCancellationSafety = (
+  mutationClass: TaskMutationClass,
+  alreadyDispatched: boolean,
+): TaskCancellationPolicy => {
+  if (mutationClass === "read_only") return "abort_immediately";
+  if (mutationClass === "mutating") {
+    return alreadyDispatched ? "report_result_no_silent_drop" : "abort_immediately";
+  }
+  return alreadyDispatched ? "report_result_no_silent_drop" : "require_confirmation";
+};
+
 let state: TurnTakingState = {
   aiSpeaking: false,
   userSpeaking: false,
@@ -24,15 +137,16 @@ let state: TurnTakingState = {
 const listeners = new Set<() => void>();
 const update = (patch: Partial<TurnTakingState>) => {
   state = { ...state, ...patch };
-  listeners.forEach(l => l());
+  listeners.forEach((l) => l());
 };
 
 export const getTurnTakingState = (): TurnTakingState => state;
-export const subscribeTurnTaking = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
+export const subscribeTurnTaking = (listener: () => void) => {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+};
 
-/** Classify a VAD candidate into a turn intent. This is a placeholder for
- * future semantic classification (text model or rule-based). For now, returns
- * "unknown" — the coordinator must not auto-act on raw VAD signals. */
+/** Classify a transcript into a turn intent via deterministic rules. */
 export const classifyIntent = (transcript: string): TurnIntent => {
   const text = transcript.trim().toLowerCase();
   if (!text) return "irrelevant";
@@ -53,8 +167,6 @@ export const classifyIntent = (transcript: string): TurnIntent => {
  * audio level. This function records the candidate but does NOT auto-act. */
 export const handleVadCandidate = (candidate: { level: number; threshold: number; timestamp: number }): void => {
   void candidate;
-  // VAD only produces candidate signals. Do NOT classify intent from audio level.
-  // The coordinator must wait for ASR transcript before classifying.
   update({ userSpeaking: true });
 };
 
@@ -84,7 +196,7 @@ export const handleUserTranscript = (transcript: string): TurnIntent => {
     // Backchannel: do NOT interrupt, let AI continue
     update({ userSpeaking: true });
   } else {
-    // irrelevant or unknown: do NOT interrupt
+    // irrelevant or unknown: do NOT interrupt here; coordinator decides whether to barge in
     update({ userSpeaking: false });
   }
   return intent;
@@ -107,9 +219,7 @@ export const resumeFromPause = (): boolean => {
   return true;
 };
 
-/** Start the turn-taking coordinator: enable VAD and wire candidate handler.
- * VAD only produces candidate signals; actual intent classification happens
- * after ASR transcription via handleUserTranscript(). */
+/** Start the turn-taking coordinator: enable VAD and wire candidate handler. */
 export const startTurnTaking = async (): Promise<boolean> => {
   const ok = await startVad();
   if (!ok) return false;
@@ -123,4 +233,4 @@ export const stopTurnTaking = (): void => {
   stopVad();
   setVadCandidateHandler(null);
   update({ aiSpeaking: false, userSpeaking: false, pausedAtMs: null, interruptedAtMs: null, lastIntent: null });
-}
+};
