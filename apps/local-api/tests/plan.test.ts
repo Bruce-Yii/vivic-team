@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { loadConfig, STEPFUN_PLAN_BASE_URL } from "../src/config.js";
+import { loadConfig, STEPFUN_API_BASE_URL, STEPFUN_PLAN_BASE_URL } from "../src/config.js";
 import { CredentialStore } from "../src/credentials.js";
 import { createApp } from "../src/app.js";
 import { chatJson, validateKey } from "../src/stepfun.js";
@@ -11,11 +11,11 @@ import { authed, chatOk, fetchStub, modelsOk, testConfig, TEST_TOKEN } from "./h
 const SECRET = "unit-plan-key-only";
 
 describe("StepFun Plan routing and fail-closed model selection", () => {
-  it("defaults to the official Plan base and preserves the stub override", () => {
+  it("defaults to the normal pay-as-you-go base and preserves both overrides", () => {
     // Empty isolated directory: never read the user's .env files.
     const dir = mkdtempSync(path.join(tmpdir(), "vivic-plan-config-"));
     try {
-      expect(loadConfig({ VIVIC_LOCAL_TOKEN: TEST_TOKEN }, dir).stepfunBaseUrl).toBe(STEPFUN_PLAN_BASE_URL);
+      expect(loadConfig({ VIVIC_LOCAL_TOKEN: TEST_TOKEN }, dir).stepfunBaseUrl).toBe(STEPFUN_API_BASE_URL);
       expect(loadConfig({ VIVIC_LOCAL_TOKEN: TEST_TOKEN, STEPFUN_BASE_URL: "http://127.0.0.1:8888/v1/" }, dir).stepfunBaseUrl)
         .toBe("http://127.0.0.1:8888/v1");
     } finally {

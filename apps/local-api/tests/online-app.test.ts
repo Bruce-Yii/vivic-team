@@ -10,7 +10,7 @@ import { ProviderStore } from "../src/providers/store.js";
 import { STEPFUN_SEED_NAME } from "../src/providers/seed.js";
 import { CredentialStore } from "../src/credentials.js";
 import { GptProvider } from "../src/gpt/provider.js";
-import { STEPFUN_PLAN_BASE_URL } from "../src/config.js";
+import { STEPFUN_API_BASE_URL } from "../src/config.js";
 import { authed, chatOk, emptyContext, modelsOk, testConfig, TEST_TOKEN } from "./helpers.js";
 
 const ORIGIN = "https://vivic.example";
@@ -47,7 +47,7 @@ describe("online app assembly", () => {
     const upstream = vi.fn<typeof fetch>(async (input, init) => {
       const url = String(input); observed.push({ url, key: keyOf(init) });
       if (url === "https://api.stepfun.com/v1/models") return modelsOk(["step-3.5-flash"]);
-      if (url === `${STEPFUN_PLAN_BASE_URL}/chat/completions`) return chatOk({ ok: true });
+      if (url === `${STEPFUN_API_BASE_URL}/chat/completions`) return chatOk({ ok: true });
       throw new Error("Unexpected TEST endpoint");
     });
     const a = online(upstream), b = online(upstream);

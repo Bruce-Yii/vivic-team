@@ -21,7 +21,7 @@ export const MODELS_TIMEOUT_MS = 15_000;
 
 const trimBase = (baseUrl: string): string => baseUrl.replace(/\/+$/, "");
 
-/** StepFun Plan serves generations from /step_plan/v1 but the catalog from /v1. */
+/** A Coding-Plan base serves generations from /step_plan/v1 but the catalog from /v1. */
 export const modelsUrl = (config: Pick<ProviderConfig, "protocol" | "baseUrl">): string => {
   const base = trimBase(config.baseUrl);
   if (config.protocol === "stepfun-plan" && /stepfun\.com/i.test(base)) {
